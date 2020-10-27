@@ -1,0 +1,9 @@
+# @package _group_
+name: cifar10
+_target_: gnosis.datasets.classification.cifar10.get_dataset
+root: /datasets/cifar10
+download: True
+
+num_classes: 10
+input_size: 32
+subsample_ratio: 1.0

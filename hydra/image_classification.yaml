@@ -1,0 +1,34 @@
+defaults:
+  - dataset: cifar10
+  - model: preresnet
+  - logger: local
+
+trainer:
+  num_epochs: 200
+  loss_fn:
+    _target_: torch.nn.CrossEntropyLoss
+  optimizer:
+    _target_: torch.optim.SGD
+    lr: 0.1
+    weight_decay: 1e-4
+    momentum: 0.9
+  lr_scheduler:
+    _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+    T_max: ${trainer.num_epochs}
+
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 256
+  shuffle: True
+
+# Directories for loading and storing data
+seed:
+trial_id: 0
+exp_name: test
+data_dir: data
+log_dir: ${data_dir}/experiments/image_classification/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
+checkpoint_dir: ${log_dir}/checkpoints
+
+hydra:
+  run:
+    dir: ./${log_dir}

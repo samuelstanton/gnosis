@@ -1,0 +1,6 @@
+# @package _group_
+_target_: gnosis.models.PreResNet
+num_classes: ${dataset.num_classes}
+depth: 32
+input_size: ${dataset.input_size}
+skip_connections: True
