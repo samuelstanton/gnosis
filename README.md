@@ -1,2 +1,2 @@
-# dark-knowledge
+# _Gnosis_
 Bayesian Ensemble Distillation
