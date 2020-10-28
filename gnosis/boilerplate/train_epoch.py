@@ -6,7 +6,7 @@ def get_lr(lr_scheduler):
     return lr_scheduler.get_last_lr()[0]
 
 
-def train_epoch(net, loader, optimizer, criterion, lr_scheduler, epoch):
+def train_epoch(net, loader, optimizer, loss_fn, lr_scheduler, epoch):
     print('\nEpoch: %d' % epoch)
     net.train()
     train_loss = 0
@@ -18,10 +18,9 @@ def train_epoch(net, loader, optimizer, criterion, lr_scheduler, epoch):
 
     prog_bar = tqdm(enumerate(loader), total=len(loader), desc=desc, leave=True)
     for batch_idx, (inputs, targets) in prog_bar:
-        inputs, targets = try_cuda(inputs), try_cuda(targets)
+        inputs, targets = try_cuda(inputs, targets)
         optimizer.zero_grad()
-        outputs = net(inputs)
-        loss = criterion(outputs, targets)
+        loss, outputs = loss_fn(inputs, targets)
         loss.backward()
         optimizer.step()
 

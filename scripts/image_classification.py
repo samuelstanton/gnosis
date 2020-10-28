@@ -1,11 +1,14 @@
 import hydra
 import pandas as pd
+import os
 import random
 import torch
 
+from gnosis import distillation, models
 from omegaconf import OmegaConf, DictConfig
 from gnosis.boilerplate import train_loop
 from gnosis.utils.data import get_loaders
+from gnosis.utils.checkpointing import load_models
 
 from upcycle.random.seed import set_all_seeds
 from upcycle.cuda import try_cuda
@@ -31,19 +34,30 @@ def startup(hydra_cfg):
 @hydra.main(config_path='../hydra', config_name='image_classification')
 def main(config):
     # construct logger, model, dataloaders
-    config, s3_logger = startup(config)
-    model = hydra.utils.instantiate(config.model)
-    model = try_cuda(model)
+    config, logger = startup(config)
     trainloader, testloader = get_loaders(config)
 
-    print("==== training the network ====")
-    train_loop(
-        config,
-        model,
-        trainloader=trainloader,
-        testloader=testloader,
-        s3_logger=s3_logger
-    )
+    teachers = load_models(config.teacher.ckpt_dir)
+    if len(teachers) >= config.teacher.num_components and config.teacher.use_ckpts is True:
+        teachers = teachers[:config.teacher.num_components]
+        teachers = try_cuda(*teachers)
+    else:
+        teachers = []
+        for i in range(config.teacher.num_components):
+            model = hydra.utils.instantiate(config.model)
+            model = try_cuda(model)
+            teacher_loss = distillation.ClassifierTeacherLoss(model)
+            print(f"==== training teacher model {i+1} ====")
+            train_loop(config, model, teacher_loss, trainloader, testloader, logger)
+            logger.save_obj(model.state_dict(), f'teacher_{i}.ckpt')
+            teachers.append(model)
+
+    teacher = models.ClassifierEnsemble(*teachers)
+    student = hydra.utils.instantiate(config.model)
+    student = try_cuda(student)
+    student_loss = distillation.ClassifierStudentLoss(teacher, student)
+    print(f"==== training the student model ====")
+    train_loop(config, student, student_loss, trainloader, testloader, logger)
 
 
 if __name__ == '__main__':

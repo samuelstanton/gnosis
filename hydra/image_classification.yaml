@@ -3,10 +3,13 @@ defaults:
   - model: preresnet
   - logger: local
 
+teacher:
+  num_components: 2
+  use_ckpts: True
+  ckpt_dir: ${data_dir}/resnet32_cifar10_ckpts
+
 trainer:
   num_epochs: 200
-  loss_fn:
-    _target_: torch.nn.CrossEntropyLoss
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.1
@@ -25,9 +28,8 @@ dataloader:
 seed:
 trial_id: 0
 exp_name: test
-data_dir: data
-log_dir: ${data_dir}/experiments/image_classification/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
-checkpoint_dir: ${log_dir}/checkpoints
+data_dir: data/experiments/image_classification
+log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 
 hydra:
   run:

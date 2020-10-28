@@ -3,7 +3,7 @@ from tqdm import tqdm
 from upcycle.cuda import try_cuda
 
 
-def eval_epoch(net, loader, criterion):
+def eval_epoch(net, loader, loss_fn):
     net.eval()
     test_loss = 0
     correct = 0
@@ -15,8 +15,7 @@ def eval_epoch(net, loader, criterion):
     with torch.no_grad():
         for batch_idx, (inputs, targets) in prog_bar:
             inputs, targets = try_cuda(inputs), try_cuda(targets)
-            outputs = net(inputs)
-            loss = criterion(outputs, targets)
+            loss, outputs = loss_fn(inputs, targets)
 
             test_loss += loss.item()
             _, predicted = outputs.max(1)

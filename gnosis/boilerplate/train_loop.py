@@ -1,13 +1,11 @@
-from torch import nn, optim
-from torch.optim import lr_scheduler
 from gnosis.boilerplate import train_epoch, eval_epoch
 from hydra.utils import instantiate
+import os
 
 
-def train_loop(config, model, trainloader, testloader, s3_logger):
+def train_loop(config, model, loss_fn, trainloader, testloader, s3_logger):
     s3_logger.add_table('train_metrics')
 
-    loss_fn = instantiate(config.trainer.loss_fn)
     optimizer = instantiate(config.trainer.optimizer, params=model.parameters())
     lr_scheduler = instantiate(config.trainer.lr_scheduler, optimizer=optimizer)
 
@@ -23,3 +21,6 @@ def train_loop(config, model, trainloader, testloader, s3_logger):
             lr=lr_scheduler.get_last_lr()[0]
         ), step=epoch + 1, table_name='train_metrics')
         s3_logger.write_csv()
+
+    model.eval()
+    return model
