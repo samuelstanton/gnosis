@@ -13,7 +13,7 @@ def load_models(ckpt_dir):
     ckpt_path = os.path.normpath(ckpt_path)
     ckpt_path = Path(ckpt_path)
     config_files = list(ckpt_path.rglob('*/.hydra/config.yaml'))
-    ckpt_files = list(ckpt_path.rglob('*.ckpt'))
+    ckpt_files = list(ckpt_path.rglob('*/teacher_*.ckpt'))
 
     if len(config_files) == 0:
         print(f"no model config files found in {ckpt_dir}")

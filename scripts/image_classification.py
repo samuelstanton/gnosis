@@ -48,16 +48,22 @@ def main(config):
             model = try_cuda(model)
             teacher_loss = distillation.ClassifierTeacherLoss(model)
             print(f"==== training teacher model {i+1} ====")
-            train_loop(config, model, teacher_loss, trainloader, testloader, logger)
-            logger.save_obj(model.state_dict(), f'teacher_{i}.ckpt')
+            model, records = train_loop(config, model, teacher_loss, trainloader, testloader)
             teachers.append(model)
+
+            logger.add_table(f'teacher_{i}_train_metrics', records)
+            logger.write_csv()
+            logger.save_obj(model.state_dict(), f'teacher_{i}.ckpt')
 
     teacher = models.ClassifierEnsemble(*teachers)
     student = hydra.utils.instantiate(config.model)
     student = try_cuda(student)
     student_loss = distillation.ClassifierStudentLoss(teacher, student)
     print(f"==== training the student model ====")
-    train_loop(config, student, student_loss, trainloader, testloader, logger)
+    student, records = train_loop(config, student, student_loss, trainloader, testloader)
+    logger.add_table(f'student_train_metrics', records)
+    logger.write_csv()
+    logger.save_obj(student.state_dict(), f'student.ckpt')
 
 
 if __name__ == '__main__':
