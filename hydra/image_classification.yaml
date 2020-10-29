@@ -34,3 +34,6 @@ log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 hydra:
   run:
     dir: ./${log_dir}
+  sweep:
+    dir: ./${log_dir}
+    subdir: .

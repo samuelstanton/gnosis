@@ -6,7 +6,7 @@ import torch
 
 from gnosis import distillation, models
 from omegaconf import OmegaConf, DictConfig
-from gnosis.boilerplate import train_loop
+from gnosis.boilerplate import train_loop, eval_epoch
 from gnosis.utils.data import get_loaders
 from gnosis.utils.checkpointing import load_models
 
@@ -39,8 +39,7 @@ def main(config):
 
     teachers = load_models(config.teacher.ckpt_dir)
     if len(teachers) >= config.teacher.num_components and config.teacher.use_ckpts is True:
-        teachers = teachers[:config.teacher.num_components]
-        teachers = try_cuda(*teachers)
+        teachers = [try_cuda(teachers[i]) for i in range(config.teacher.num_components)]
     else:
         teachers = []
         for i in range(config.teacher.num_components):
@@ -55,12 +54,17 @@ def main(config):
             logger.write_csv()
             logger.save_obj(model.state_dict(), f'teacher_{i}.ckpt')
 
+    print('==== ensembling teacher models ====')
     teacher = models.ClassifierEnsemble(*teachers)
+    _, teacher_test_acc = eval_epoch(teacher, testloader, models.ensemble.ClassifierEnsembleLoss(teacher))
+
     student = hydra.utils.instantiate(config.model)
     student = try_cuda(student)
     student_loss = distillation.ClassifierStudentLoss(teacher, student)
     print(f"==== training the student model ====")
     student, records = train_loop(config, student, student_loss, trainloader, testloader)
+    for r in records:
+        r.update(dict(teacher_test_acc=teacher_test_acc))
     logger.add_table(f'student_train_metrics', records)
     logger.write_csv()
     logger.save_obj(student.state_dict(), f'student.ckpt')
