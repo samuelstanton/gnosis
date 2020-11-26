@@ -26,7 +26,6 @@ def eval_epoch(net, loader, loss_fn):
                     % (test_loss / (batch_idx + 1), 100. * correct / total, correct, total))
             prog_bar.set_description(desc, refresh=True)
 
-    # Save checkpoint.
     avg_loss = test_loss / (batch_idx + 1)
     test_acc = 100. * correct / total
     return avg_loss, test_acc

@@ -1,9 +1,19 @@
 # @package _group_
-name: cifar10
-_target_: gnosis.datasets.classification.cifar10.get_dataset
-root: /datasets/cifar10
-download: True
+init:
+  _target_: torchvision.datasets.CIFAR10
+  root: /datasets/cifar10
+  download: True
 
+name: cifar10
 num_classes: 10
 input_size: 32
 subsample_ratio: 1.0
+statistics:
+  mean_statistics:
+    - 0.4914
+    - 0.4822
+    - 0.4465
+  std_statistics:
+    - 0.2023
+    - 0.1994
+    - 0.2010

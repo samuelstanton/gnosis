@@ -26,8 +26,9 @@ def startup(hydra_cfg):
     logger.write_hydra_yaml(hydra_cfg)
 
     print(hydra_cfg.pretty())
+    with open('hydra_config.txt', 'w') as f:
+        f.write(hydra_cfg.pretty())
     print(f"GPU available: {torch.cuda.is_available()}")
-
     return hydra_cfg, logger
 
 
@@ -36,7 +37,6 @@ def main(config):
     # construct logger, model, dataloaders
     config, logger = startup(config)
     trainloader, testloader = get_loaders(config)
-
     teachers = load_models(config.teacher.ckpt_dir)
     if len(teachers) >= config.teacher.num_components and config.teacher.use_ckpts is True:
         teachers = [try_cuda(teachers[i]) for i in range(config.teacher.num_components)]

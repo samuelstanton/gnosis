@@ -1,10 +1,12 @@
 import hydra
 from torch.utils.data import DataLoader, random_split
+import torchvision
 
 
 def get_loaders(config):
-    train_dataset = hydra.utils.call(config.dataset, train=True)
-    test_dataset = hydra.utils.call(config.dataset, train=False)
+    train_transform, test_transform = get_augmentation(config)
+    train_dataset = hydra.utils.instantiate(config.dataset.init, train=True, transform=train_transform)
+    test_dataset = hydra.utils.instantiate(config.dataset.init, train=False, transform=test_transform)
 
     subsample_ratio = config.dataset.subsample_ratio
     if subsample_ratio > 0.:
@@ -21,3 +23,17 @@ def split_dataset(dataset, ratio):
     num_total = len(dataset)
     num_split = int(num_total * ratio)
     return random_split(dataset, [num_split, num_total - num_split])
+
+
+def get_augmentation(config):
+    transforms_list = [hydra.utils.instantiate(config.augmentation[name])
+                       for name in config.augmentation["transforms_list"].split(",")]
+    normalize_transforms = [
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize(config.dataset.statistics.mean_statistics,
+                                         config.dataset.statistics.std_statistics)
+    ]
+
+    train_transform = torchvision.transforms.Compose(transforms_list + normalize_transforms)
+    test_transform = torchvision.transforms.Compose([normalize_transforms])
+    return train_transform, test_transform

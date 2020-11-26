@@ -3,6 +3,19 @@ defaults:
   - model: preresnet
   - logger: local
 
+augmentation:
+  rotation:
+    _target_: torchvision.transforms.RandomRotation
+    degrees: 90
+  crop:
+    _target_: torchvision.transforms.RandomCrop
+    size: ${dataset.input_size}
+    padding: 4
+  horizontal_flip:
+    _target_: torchvision.transforms.RandomHorizontalFlip
+  transforms_list: crop,rotation,horizontal_flip
+
+
 teacher:
   num_components: 2
   use_ckpts: True
