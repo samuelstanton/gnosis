@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import random
 import torch
+from tensorboardX import SummaryWriter
 
 from gnosis import distillation, models
 from omegaconf import OmegaConf, DictConfig
@@ -24,19 +25,22 @@ def startup(hydra_cfg):
     hydra_cfg = OmegaConf.to_container(hydra_cfg, resolve=True)  # Resolve config interpolations
     hydra_cfg = DictConfig(hydra_cfg)
     logger.write_hydra_yaml(hydra_cfg)
+    tb_logger = SummaryWriter(log_dir=".")
 
     print(hydra_cfg.pretty())
     with open('hydra_config.txt', 'w') as f:
         f.write(hydra_cfg.pretty())
     print(f"GPU available: {torch.cuda.is_available()}")
-    return hydra_cfg, logger
+    return hydra_cfg, logger, tb_logger
 
 
 @hydra.main(config_path='../hydra', config_name='image_classification')
 def main(config):
     # construct logger, model, dataloaders
-    config, logger = startup(config)
+    config, logger, tb_logger = startup(config)
     trainloader, testloader = get_loaders(config)
+    tb_logger.add_text("hypers/transforms", config.augmentation.transforms_list, 0)
+
     teachers = load_models(config.teacher.ckpt_dir)
     if len(teachers) >= config.teacher.num_components and config.teacher.use_ckpts is True:
         teachers = [try_cuda(teachers[i]) for i in range(config.teacher.num_components)]
@@ -47,7 +51,9 @@ def main(config):
             model = try_cuda(model)
             teacher_loss = distillation.ClassifierTeacherLoss(model)
             print(f"==== training teacher model {i+1} ====")
-            model, records = train_loop(config, model, teacher_loss, trainloader, testloader)
+
+            tb_prefix = "teachers/teacher_{}/".format(i)
+            model, records = train_loop(config, model, teacher_loss, trainloader, testloader, tb_logger, tb_prefix)
             teachers.append(model)
 
             logger.add_table(f'teacher_{i}_train_metrics', records)
@@ -62,7 +68,7 @@ def main(config):
     student = try_cuda(student)
     student_loss = distillation.ClassifierStudentLoss(teacher, student)
     print(f"==== training the student model ====")
-    student, records = train_loop(config, student, student_loss, trainloader, testloader)
+    student, records = train_loop(config, student, student_loss, trainloader, testloader, tb_logger)
     for r in records:
         r.update(dict(teacher_test_acc=teacher_test_acc))
     logger.add_table(f'student_train_metrics', records)
