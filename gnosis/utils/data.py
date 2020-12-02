@@ -1,6 +1,17 @@
+import os
+import torch
 import hydra
 from torch.utils.data import DataLoader, random_split
 import torchvision
+from upcycle.cuda import try_cuda
+
+
+def get_generator(config):
+    generator = hydra.utils.instantiate(config.generator)
+    weight_file = os.path.join(hydra.utils.get_original_cwd(), config.generator.weight_file)
+    weight_dict = torch.load(weight_file)
+    generator.load_state_dict(weight_dict)
+    return try_cuda(generator)
 
 
 def get_loaders(config):

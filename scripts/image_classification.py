@@ -8,7 +8,7 @@ from tensorboardX import SummaryWriter
 from gnosis import distillation, models
 from omegaconf import OmegaConf, DictConfig
 from gnosis.boilerplate import train_loop, eval_epoch
-from gnosis.utils.data import get_loaders
+from gnosis.utils.data import get_loaders, get_generator
 from gnosis.utils.checkpointing import load_models
 
 from upcycle.random.seed import set_all_seeds
@@ -62,15 +62,19 @@ def main(config):
 
     print('==== ensembling teacher models ====')
     teacher = models.ClassifierEnsemble(*teachers)
+    _, teacher_train_acc = eval_epoch(teacher, trainloader, models.ensemble.ClassifierEnsembleLoss(teacher))
     _, teacher_test_acc = eval_epoch(teacher, testloader, models.ensemble.ClassifierEnsembleLoss(teacher))
 
     student = hydra.utils.instantiate(config.model)
     student = try_cuda(student)
-    student_loss = distillation.ClassifierStudentLoss(teacher, student)
+
+    generator = get_generator(config) if config.trainer.generator.enabled else None
+    student_loss = distillation.ClassifierStudentLoss(teacher, student, generator,
+                                                      gen_ratio=config.trainer.generator.gen_ratio)
     print(f"==== training the student model ====")
     student, records = train_loop(config, student, student_loss, trainloader, testloader, tb_logger)
     for r in records:
-        r.update(dict(teacher_test_acc=teacher_test_acc))
+        r.update(dict(teacher_test_acc=teacher_test_acc, teacher_train_acc=teacher_train_acc))
     logger.add_table(f'student_train_metrics', records)
     logger.write_csv()
     logger.save_obj(student.state_dict(), f'student.ckpt')
