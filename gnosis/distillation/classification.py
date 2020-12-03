@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 from torch.distributions.kl import kl_divergence
+import math
 
 
 class ClassifierTeacherLoss(object):
@@ -15,11 +16,20 @@ class ClassifierTeacherLoss(object):
 
 
 class ClassifierStudentLoss(object):
-    def __init__(self, teacher_model, student_model):
+    def __init__(self, teacher_model, student_model, generator_model=None, gen_ratio=0.):
         self.teacher = teacher_model
         self.student = student_model
+        self.generator = generator_model
+        self.gen_ratio = gen_ratio
 
     def __call__(self, inputs, *args):
+        batch_size = inputs.size(0)
+        if self.generator is not None and self.gen_ratio > 0:
+            num_generated = math.ceil(batch_size * self.gen_ratio)
+            self.generator.eval()
+            synth_inputs = self.generator.sample(num_generated)
+            inputs = torch.cat([inputs, synth_inputs], dim=0)
+
         with torch.no_grad():
             teacher_logp = self.teacher(inputs).log_softmax(dim=-1)
 
@@ -35,4 +45,4 @@ class ClassifierStudentLoss(object):
 
         # loss = F.mse_loss(student_probs, teacher_probs)  # Brier Score
 
-        return loss, student_logits
+        return loss, student_logits[:batch_size]
