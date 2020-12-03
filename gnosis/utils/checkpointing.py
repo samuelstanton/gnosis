@@ -11,8 +11,8 @@ def load_models(ckpt_dir):
     ckpt_path = os.path.join(hydra.utils.get_original_cwd(), ckpt_dir)
     ckpt_path = os.path.normpath(ckpt_path)
     ckpt_path = Path(ckpt_path)
-    config_files = list(ckpt_path.rglob('*/.hydra/config.yaml'))
-    ckpt_files = list(ckpt_path.rglob('*/teacher_*.ckpt'))
+    config_files = list(ckpt_path.rglob('.hydra/config.yaml'))
+    ckpt_files = list(ckpt_path.rglob('teacher_*.ckpt'))
 
     if len(config_files) == 0:
         print(f"no model config files found in {ckpt_dir}")
@@ -21,8 +21,9 @@ def load_models(ckpt_dir):
         print(f"no checkpoints found in {ckpt_dir}")
         return []
 
+    cfg_file = config_files[0]
     saved_models = []
-    for cfg_file, ckpt_file in zip(config_files, ckpt_files):
+    for ckpt_file in ckpt_files:
         config = OmegaConf.load(cfg_file)
         model = instantiate(config.model)
 
