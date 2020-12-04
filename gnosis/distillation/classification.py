@@ -32,6 +32,8 @@ class ClassifierStudentLoss(object):
 
         with torch.no_grad():
             teacher_logp = self.teacher(inputs).log_softmax(dim=-1)
+            n_teachers = len(teacher_logp)
+            teacher_logp = torch.logsumexp(teacher_logp, dim=0) / n_teachers
 
         student_logits = self.student(inputs)
         student_logp = student_logits.log_softmax(dim=-1)
