@@ -63,8 +63,8 @@ def main(config):
 
     print('==== ensembling teacher models ====')
     teacher = models.ClassifierEnsemble(*teachers)
-    # _, teacher_train_acc = eval_epoch(teacher, trainloader, models.ensemble.ClassifierEnsembleLoss(teacher))
-    # _, teacher_test_acc = eval_epoch(teacher, testloader, models.ensemble.ClassifierEnsembleLoss(teacher))
+    _, teacher_train_acc = eval_epoch(teacher, trainloader, models.ensemble.ClassifierEnsembleLoss(teacher))
+    _, teacher_test_acc = eval_epoch(teacher, testloader, models.ensemble.ClassifierEnsembleLoss(teacher))
 
     student = hydra.utils.instantiate(config.model)
     student = try_cuda(student)
