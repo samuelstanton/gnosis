@@ -1,0 +1,20 @@
+# @package _group_
+init:
+  _target_: gnosis.datasets.CIFAR102
+  root: /datasets/cifar10_2
+  download: True
+  cifar10_fraction: 1.
+
+name: cifar102
+num_classes: 10
+input_size: 32
+subsample_ratio: 1.0
+statistics:
+  mean_statistics:
+    - 0.4914
+    - 0.4822
+    - 0.4465
+  std_statistics:
+    - 0.2023
+    - 0.1994
+    - 0.2010

@@ -30,6 +30,7 @@ def startup(hydra_cfg):
     print(hydra_cfg.pretty())
     with open('hydra_config.txt', 'w') as f:
         f.write(hydra_cfg.pretty())
+    tb_logger.add_text("hypers/hydra_cfg", hydra_cfg.pretty())
     print(f"GPU available: {torch.cuda.is_available()}")
     return hydra_cfg, logger, tb_logger
 
