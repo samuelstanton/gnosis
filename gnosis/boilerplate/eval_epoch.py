@@ -15,7 +15,8 @@ def eval_epoch(net, loader, loss_fn):
     with torch.no_grad():
         for batch_idx, (inputs, targets) in prog_bar:
             inputs, targets = try_cuda(inputs), try_cuda(targets)
-            loss, outputs = loss_fn(inputs, targets)
+            # loss, outputs = loss_fn(inputs, targets)
+            loss, outputs, targets = loss_fn(inputs, targets)
 
             test_loss += loss.item()
             _, predicted = outputs.max(1)

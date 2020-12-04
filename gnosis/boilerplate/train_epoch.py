@@ -20,7 +20,8 @@ def train_epoch(net, loader, optimizer, loss_fn, lr_scheduler, epoch):
     for batch_idx, (inputs, targets) in prog_bar:
         inputs, targets = try_cuda(inputs, targets)
         optimizer.zero_grad()
-        loss, outputs = loss_fn(inputs, targets)
+        # loss, outputs = loss_fn(inputs, targets)
+        loss, outputs, targets = loss_fn(inputs, targets)
         loss.backward()
         optimizer.step()
 
