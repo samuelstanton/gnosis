@@ -40,7 +40,7 @@ class ClassifierStudentLoss(object):
 
         student_logits = self.student(inputs)
         student_logp = student_logits.log_softmax(dim=-1)
-        loss = base_loss(teacher_logp, student_logp)
+        loss = self.base_loss(teacher_logp, student_logp)
 
         return loss, student_logits[:batch_size]
     
@@ -72,7 +72,7 @@ class BaseClassificationDistillationLoss(ABC):
     def _reduce_teacher_predictions(teacher_logits):
         if len(teacher_logits.shape) == 3:
             n_teachers = len(teacher_logits)
-            return torch.logsumexp(teacher_logits, dim=0) - torch.log(n_teachers)
+            return torch.logsumexp(teacher_logits, dim=0) - math.log(n_teachers)
         return teacher_logits
 
     @staticmethod
