@@ -1,0 +1,18 @@
+  launcher:
+    submitit_folder: ${hydra.sweep.dir}/.submitit/%j
+    timeout_min: 60
+    cpus_per_task: 8
+    gpus_per_node: 1
+    tasks_per_node: 1
+    mem_gb: 16
+    nodes: 1
+    name: ${hydra.job.name}
+    _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
+    partition: null
+    comment: null
+    constraint: null
+    exclude: null
+    signal_delay_s: 120
+    max_num_timeout: 0
+    additional_parameters: {}
+    array_parallelism: 256

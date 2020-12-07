@@ -2,6 +2,7 @@ defaults:
   - dataset: cifar10
   - model: preresnet
   - logger: local
+  - hydra/launcher: basic
 
 augmentation:
   random_apply:
