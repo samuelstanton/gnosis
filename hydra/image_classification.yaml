@@ -80,6 +80,7 @@ trial_id: 0
 exp_name: test
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
+project_name: gnosis
 
 hydra:
   run:
