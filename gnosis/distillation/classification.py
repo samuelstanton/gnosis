@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
-from torch.distributions.categorical import Categorical
-from torch.distributions.kl import kl_divergence
+from torch.distributions import Categorical
+from torch.distributions import kl_divergence
 import math
 from abc import ABC, abstractmethod
 
@@ -71,6 +71,7 @@ class BaseClassificationDistillationLoss(ABC):
     @staticmethod
     def _reduce_teacher_predictions(teacher_logits):
         if len(teacher_logits.shape) == 3:
+            teacher_logits = F.log_softmax(teacher_logits, dim=2)
             n_teachers = len(teacher_logits)
             return torch.logsumexp(teacher_logits, dim=0) - math.log(n_teachers)
         return teacher_logits
@@ -86,6 +87,8 @@ class BaseClassificationDistillationLoss(ABC):
 
 
 class TeacherStudentKLLoss(BaseClassificationDistillationLoss):
+    """KL loss between the teacher and student predictions.
+    """
     @staticmethod
     def teacher_student_loss(teacher_logits, student_logits):
         teacher_dist = Categorical(logits=teacher_logits)
@@ -95,6 +98,8 @@ class TeacherStudentKLLoss(BaseClassificationDistillationLoss):
         
 
 class SymmetrizedKLLoss(BaseClassificationDistillationLoss):
+    """Symmetrized KL loss.
+    """
     @staticmethod
     def teacher_student_loss(teacher_logits, student_logits):
         teacher_dist = Categorical(logits=teacher_logits)
@@ -106,10 +111,14 @@ class SymmetrizedKLLoss(BaseClassificationDistillationLoss):
     
 
 class BrierLoss(BaseClassificationDistillationLoss):
+    """Brier loss.
+    
+    Note: error is averaged both over the classes and data.
+    """
     @staticmethod
     def teacher_student_loss(teacher_logits, student_logits):
-        teacher_probs = F.softmax(teacher_logits)
-        student_probs = F.softmax(student_logits)
+        teacher_probs = F.softmax(teacher_logits, dim=-1)
+        student_probs = F.softmax(student_logits, dim=-1)
         return F.mse_loss(student_probs, teacher_probs)
 
 
@@ -130,4 +139,7 @@ class AveragedSymmetrizedKLLoss(BaseClassificationDistillationLoss):
         teacher_dist = Categorical(logits=teacher_logits)
         student_dist = Categorical(logits=student_logits)
         
-        return kl_divergence(teacher_dist, student_dist).mean()
+        kl = kl_divergence(teacher_dist, student_dist).mean()
+        reversed_kl = kl_divergence(student_dist, teacher_dist).mean()
+        
+        return kl + reversed_kl
