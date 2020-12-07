@@ -8,7 +8,7 @@ from gnosis import distillation
 class TestClassificationDistillationLoss(unittest.TestCase):
     """Unit tests for classification distillation losses.
     """
-    
+
     @staticmethod
     def _generate_logits_probs(n_teachers=5, n_data=100, n_classes=10):
         teacher_logits = torch.randn(n_teachers, n_data, n_classes)
@@ -34,7 +34,7 @@ class TestClassificationDistillationLoss(unittest.TestCase):
             loss_fn(teacher_logits, student_logits[:-1])
         with self.assertRaises(exception_type):
             loss_fn(teacher_logits, student_logits[:, :-1])
-            
+
         # Providing ensemble logits instead of list of teacher logits
         ens_logits = teacher_ens_probs.log()
         with self.assertRaises(exception_type):
@@ -45,27 +45,27 @@ class TestClassificationDistillationLoss(unittest.TestCase):
             loss_fn(ens_logits, student_logits[:-1])
         with self.assertRaises(exception_type):
             loss_fn(ens_logits, student_logits[:, :-1])
-    
+
     @staticmethod
     def _get_kl(probs_a, probs_b):
         kl = probs_a * (probs_a / probs_b).log()
         kl = kl.sum(dim=1).mean(dim=0)
         return kl
-    
+
     def test_kl_teacher_student_loss(self):
         """Test TeacherStudentKLLoss.
         """
         teacher_logits, teacher_ens_probs, student_logits, student_probs = (
             self._generate_logits_probs())
-        
+
         kl = self._get_kl(teacher_ens_probs, student_probs)
-        
+
         loss_fn = distillation.TeacherStudentKLLoss()
         kl_gnosis = loss_fn(teacher_logits, student_logits)
         kl_gnosis_alt = loss_fn(teacher_ens_probs.log(), student_probs.log())
         self.assertAlmostEqual(kl.item(), kl_gnosis.item(), 4)
         self.assertAlmostEqual(kl.item(), kl_gnosis_alt.item(), 4)
-    
+
     def test_tempering(self):
         """Test tempering the teacher logits.
         """
@@ -74,7 +74,7 @@ class TestClassificationDistillationLoss(unittest.TestCase):
             self._generate_logits_probs())
         teacher_ens_probs_t = F.softmax(teacher_ens_probs.log() / T, dim=-1)
         kl = self._get_kl(teacher_ens_probs_t, student_probs)
-        
+
         loss_fn = distillation.TeacherStudentKLLoss()
         kl_gnosis = loss_fn(teacher_logits, student_logits, T)
         kl_gnosis_alt = loss_fn(teacher_ens_probs.log(), student_probs.log(), T)
@@ -86,11 +86,11 @@ class TestClassificationDistillationLoss(unittest.TestCase):
         """
         teacher_logits, teacher_ens_probs, student_logits, student_probs = (
             self._generate_logits_probs())
-    
+
         kl = self._get_kl(teacher_ens_probs, student_probs)
         reverse_kl = self._get_kl(student_probs, teacher_ens_probs)
         loss = kl + reverse_kl
-    
+
         loss_fn = distillation.SymmetrizedKLLoss()
         loss_gnosis = loss_fn(teacher_logits, student_logits)
         loss_gnosis_alt = loss_fn(teacher_ens_probs.log(), student_probs.log())
@@ -102,16 +102,16 @@ class TestClassificationDistillationLoss(unittest.TestCase):
         """
         teacher_logits, teacher_ens_probs, student_logits, student_probs = (
             self._generate_logits_probs())
-        
+
         loss = 0.
         for logits in teacher_logits:
             probs = F.softmax(logits, dim=-1)
             kl = self._get_kl(probs, student_probs)
             reverse_kl = self._get_kl(student_probs, probs)
             loss += kl + reverse_kl
-        
+
         loss /= len(teacher_logits)
-    
+
         loss_fn = distillation.AveragedSymmetrizedKLLoss()
         loss_gnosis = loss_fn(teacher_logits, student_logits)
         self.assertAlmostEqual(loss.item(), loss_gnosis.item(), 4)
@@ -122,7 +122,7 @@ class TestClassificationDistillationLoss(unittest.TestCase):
         teacher_logits, teacher_ens_probs, student_logits, student_probs = (
             self._generate_logits_probs())
         loss = (teacher_ens_probs - student_probs).pow(2).mean()
-    
+
         loss_fn = distillation.BrierLoss()
         loss_gnosis = loss_fn(teacher_logits, student_logits)
         loss_gnosis_alt = loss_fn(teacher_ens_probs.log(), student_probs.log())
@@ -131,4 +131,4 @@ class TestClassificationDistillationLoss(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

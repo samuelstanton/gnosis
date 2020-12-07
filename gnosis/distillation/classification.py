@@ -43,16 +43,16 @@ class ClassifierStudentLoss(object):
         loss = self.base_loss(teacher_logp, student_logp)
 
         return loss, student_logits[:batch_size]
-    
-    
+
+
 class BaseClassificationDistillationLoss(ABC):
     """Abstract class that defines interface for distillation losses.
     """
-    
+
     @classmethod
     def __call__(cls, teacher_logits, student_logits, teacher_temperature=1.):
         """Evaluate loss.
-        
+
         :param teacher_logits: tensor of teacher model logits of size
             [num_teachers, batch_size, num_classes] or [batch_size, num_classes]
         :param student_logits: tensor of student model logits of size
@@ -61,13 +61,14 @@ class BaseClassificationDistillationLoss(ABC):
         :return: scalar loss value
         """
         teacher_logits = cls._reduce_teacher_predictions(teacher_logits)
-        teacher_logits = cls._temper_predictions(teacher_logits, teacher_temperature)
+        teacher_logits = cls._temper_predictions(teacher_logits,
+                                                 teacher_temperature)
         assert teacher_logits.shape == student_logits.shape, \
             "Shape mismatch: teacher logits" \
             "have shape {} and student logits have shape {}".format(
                     teacher_logits.shape, student_logits.shape)
         return cls.teacher_student_loss(teacher_logits, student_logits)
-        
+
     @staticmethod
     def _reduce_teacher_predictions(teacher_logits):
         if len(teacher_logits.shape) == 3:
@@ -93,9 +94,9 @@ class TeacherStudentKLLoss(BaseClassificationDistillationLoss):
     def teacher_student_loss(teacher_logits, student_logits):
         teacher_dist = Categorical(logits=teacher_logits)
         student_dist = Categorical(logits=student_logits)
-        
+
         return kl_divergence(teacher_dist, student_dist).mean()
-        
+
 
 class SymmetrizedKLLoss(BaseClassificationDistillationLoss):
     """Symmetrized KL loss.
@@ -104,15 +105,15 @@ class SymmetrizedKLLoss(BaseClassificationDistillationLoss):
     def teacher_student_loss(teacher_logits, student_logits):
         teacher_dist = Categorical(logits=teacher_logits)
         student_dist = Categorical(logits=student_logits)
-    
+
         kl_p_q = kl_divergence(teacher_dist, student_dist)
         kl_q_p = kl_divergence(student_dist, teacher_dist)
         return kl_p_q.mean() + kl_q_p.mean()
-    
+
 
 class BrierLoss(BaseClassificationDistillationLoss):
     """Brier loss.
-    
+
     Note: error is averaged both over the classes and data.
     """
     @staticmethod
@@ -124,22 +125,23 @@ class BrierLoss(BaseClassificationDistillationLoss):
 
 class AveragedSymmetrizedKLLoss(BaseClassificationDistillationLoss):
     """Symmetrized KL averaged over teacher models.
-    
+
     Here, instead of using the ensemble, we compute the average KL to each of
     the teacher models. This is the loss that we had implemented originally.
     """
 
     def __call__(cls, teacher_logits, student_logits, teacher_temperature=1.):
         # overwrite the __call__ method to not reduce the teacher logits
-        teacher_logits = cls._temper_predictions(teacher_logits, teacher_temperature)
+        teacher_logits = cls._temper_predictions(teacher_logits,
+                                                 teacher_temperature)
         return cls.teacher_student_loss(teacher_logits, student_logits)
-    
+
     @staticmethod
     def teacher_student_loss(teacher_logits, student_logits):
         teacher_dist = Categorical(logits=teacher_logits)
         student_dist = Categorical(logits=student_logits)
-        
+
         kl = kl_divergence(teacher_dist, student_dist).mean()
         reversed_kl = kl_divergence(student_dist, teacher_dist).mean()
-        
+
         return kl + reversed_kl
