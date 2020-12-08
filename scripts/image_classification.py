@@ -35,7 +35,7 @@ def startup(hydra_cfg):
     return hydra_cfg, logger, tb_logger
 
 
-@hydra.main(config_path='../hydra', config_name='image_classification')
+@hydra.main(config_path='../config', config_name='image_classification')
 def main(config):
     # construct logger, model, dataloaders
     config, logger, tb_logger = startup(config)

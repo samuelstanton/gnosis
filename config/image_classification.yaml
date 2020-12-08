@@ -77,7 +77,7 @@ dataloader:
 # Directories for loading and storing data
 seed:
 trial_id: 0
-exp_name: test
+exp_name: synth_aug_${trainer.generator.gen_ratio}/preresnet20_${teacher.num_components}-preresnet20_1-${dataset.name}
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis
