@@ -11,7 +11,7 @@ def load_models(ckpt_dir):
     ckpt_path = os.path.join(hydra.utils.get_original_cwd(), ckpt_dir)
     ckpt_path = os.path.normpath(ckpt_path)
     ckpt_path = Path(ckpt_path)
-    config_files = list(ckpt_path.rglob('.hydra/config.yaml'))
+    config_files = list(ckpt_path.rglob('config.yaml'))
     ckpt_files = list(ckpt_path.rglob('teacher_*.ckpt'))
 
     if len(config_files) == 0:
