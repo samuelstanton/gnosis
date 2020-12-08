@@ -1,5 +1,6 @@
 # @package _group_
 _target_: gnosis.models.PreResNet
+name: preresnet
 num_classes: ${dataset.num_classes}
 depth: 20
 input_size: ${dataset.input_size}

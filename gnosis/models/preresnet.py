@@ -103,7 +103,8 @@ class Bottleneck(nn.Module):
 
 
 class PreResNet(nn.Module):
-    def __init__(self, num_classes=10, depth=110, planes=(16, 32, 64), input_size=32, skip_connections=True):
+    def __init__(self, num_classes=10, depth=110, planes=(16, 32, 64), input_size=32, skip_connections=True,
+                 **kwargs):
         super(PreResNet, self).__init__()
         if depth >= 44:
             assert (depth - 2) % 9 == 0, "depth should be 9n+2"
