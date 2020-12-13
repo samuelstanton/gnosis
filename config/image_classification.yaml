@@ -2,6 +2,7 @@ defaults:
   - dataset: cifar10
   - model: preresnet
   - logger: local
+  - loss: symmetrized_kl
   - hydra/launcher: basic
 
 augmentation:

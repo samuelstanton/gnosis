@@ -1,6 +1,4 @@
 import hydra
-import pandas as pd
-import os
 import random
 import torch
 from tensorboardX import SummaryWriter
@@ -70,8 +68,10 @@ def main(config):
     student = try_cuda(student)
 
     generator = get_generator(config) if config.trainer.generator.enabled else None
-    student_loss = distillation.ClassifierStudentLoss(teacher, student, generator,
-                                                      gen_ratio=config.trainer.generator.gen_ratio)
+    student_base_loss = hydra.utils.instantiate(config.loss.init)
+    student_loss = distillation.ClassifierStudentLoss(
+        teacher, student, student_base_loss, generator,
+        gen_ratio=config.trainer.generator.gen_ratio)
     print(f"==== training the student model ====")
     student, records = train_loop(config, student, student_loss, trainloader, testloader, tb_logger)
     for r in records:
