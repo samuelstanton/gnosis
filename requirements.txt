@@ -5,3 +5,4 @@ pandas>=1.0
 tabulate
 s3fs==0.4
 tqdm
+tensorboardX
