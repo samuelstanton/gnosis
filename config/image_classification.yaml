@@ -43,7 +43,6 @@ augmentation:
       - 2.0
   transforms_list: crop,horizontal_flip
 
-
 teacher:
   num_components: 2
   use_ckpts: True

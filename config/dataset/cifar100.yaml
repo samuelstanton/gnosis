@@ -1,9 +1,19 @@
 # @package _group_
-name: cifar100
-_target_: gnosis.datasets.classification.cifar100.get_dataset
-root: /datasets/cifar100
-download: True
+init:
+  _target_: torchvision.datasets.CIFAR100
+  root: /datasets/cifar100
+  download: True
 
+name: cifar100
 num_classes: 100
 input_size: 32
 subsample_ratio: 1.0
+statistics:
+  mean_statistics:
+    - 0.5071
+    - 0.4867
+    - 0.4408
+  std_statistics:
+    - 0.2675
+    - 0.2565
+    - 0.2761

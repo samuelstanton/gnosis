@@ -1,0 +1,46 @@
+defaults:
+  - dataset: cifar10
+  - logger: local
+  - hydra/launcher: basic
+
+generator:
+  _target_: gnosis.models.DCGenerator
+  nc: 3
+  nz: 100
+  ngf: 64
+
+discriminator:
+  _target_: gnosis.models.DCDiscriminator
+  input_size: ${dataset.input_size}
+  nc: 3
+  ndf: 64
+
+trainer:
+  num_epochs: 200
+  optimizer:
+    lr: 2e-4
+    beta1: 0.5
+    beta2: 0.999
+
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 128
+  shuffle: True
+  num_workers: 2
+
+# Directories for loading and storing data
+version: 0.0.1
+checkpoint_freq: ${trainer.num_epochs}
+seed:
+trial_id: 0
+exp_name: dcgan_${dataset.name}_v${version}
+data_dir: data/experiments/image_generation
+log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
+project_name: gnosis
+
+hydra:
+  run:
+    dir: ./${log_dir}
+  sweep:
+    dir: ./${log_dir}
+    subdir: .

@@ -39,17 +39,21 @@ def split_dataset(dataset, ratio):
 
 
 def get_augmentation(config):
-    transforms_list = [hydra.utils.instantiate(config.augmentation[name])
-                       for name in config.augmentation["transforms_list"].split(",")]
-    if config.augmentation.random_apply.p < 1:
-        transforms_list = [
-            hydra.utils.instantiate(config.augmentation.random_apply, transforms=transforms_list)]
+    if 'augmentation' in config.keys():
+        assert 'transforms_list' in config.augmentation.keys()
+        transforms_list = [hydra.utils.instantiate(config.augmentation[name])
+                           for name in config.augmentation["transforms_list"].split(",")]
+        if config.augmentation.random_apply.p < 1:
+            transforms_list = [
+                hydra.utils.instantiate(config.augmentation.random_apply, transforms=transforms_list)]
+    else:
+        transforms_list = []
+
     normalize_transforms = [
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize(config.dataset.statistics.mean_statistics,
                                          config.dataset.statistics.std_statistics)
     ]
-
     train_transform = torchvision.transforms.Compose(transforms_list + normalize_transforms)
     test_transform = torchvision.transforms.Compose(normalize_transforms)
     return train_transform, test_transform
