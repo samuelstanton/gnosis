@@ -39,16 +39,34 @@ def split_dataset(dataset, ratio):
 
 
 def get_augmentation(config):
-    transforms_list = [hydra.utils.instantiate(config.augmentation[name])
-                       for name in config.augmentation["transforms_list"].split(",")]
-    if config.augmentation.random_apply.p < 1:
-        transforms_list = [
-            hydra.utils.instantiate(config.augmentation.random_apply, transforms=transforms_list)]
+    assert 'augmentation' in config.keys()
+    if config.augmentation.transforms_list is not None:
+        transforms_list = [hydra.utils.instantiate(config.augmentation[name])
+                           for name in config.augmentation["transforms_list"].split(",")]
+        if 'random_apply' in config.augmentation.keys() and config.augmentation.random_apply.p < 1:
+            transforms_list = [
+                hydra.utils.instantiate(config.augmentation.random_apply, transforms=transforms_list)]
+    else:
+        transforms_list = []
+
     normalize_transforms = [
         torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize(config.dataset.statistics.mean_statistics,
-                                         config.dataset.statistics.std_statistics)
     ]
+    if config.augmentation.normalization == 'z_score':
+        # mean subtract and scale to unit variance
+        normalize_transforms.append(
+            torchvision.transforms.Normalize(config.dataset.statistics.mean_statistics,
+                                             config.dataset.statistics.std_statistics)
+        )
+    elif config.augmentation.normalization == 'max_min':
+        # rescale values to [-1, 1]
+        min_vals = config.dataset.statistics.min
+        max_vals = config.dataset.statistics.max
+        offset = [0.5 * (min_val + max_val) for min_val, max_val in zip(min_vals, max_vals)]
+        scale = [(max_val - min_val) / 2 for max_val, min_val in zip(max_vals, min_vals)]
+        normalize_transforms.append(
+            torchvision.transforms.Normalize(offset, scale)
+        )
 
     train_transform = torchvision.transforms.Compose(transforms_list + normalize_transforms)
     test_transform = torchvision.transforms.Compose(normalize_transforms)

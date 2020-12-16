@@ -5,39 +5,55 @@ import torch.nn as nn
 from upcycle.cuda import try_cuda
 
 
-class DCGenerator(nn.Module):
-    def __init__(self, nc=3, nz=100, ngf=64, **kwargs):
+class DCGenerator(nn.Sequential):
+    def __init__(self, nc=3, nz=100, ngf=64, output_dim=64, **kwargs):
         super(DCGenerator, self).__init__()
         self.ngpu = torch.cuda.device_count()
         self.input_dim = nz
-        self.main = nn.Sequential(
+        self.output_dim = output_dim
+        modules = [
             # input is Z, going into a convolution
             nn.ConvTranspose2d(nz, ngf * 8, 4, 1, 0, bias=False),
+            # state size. (ngf*8) x 4 x 4
             nn.BatchNorm2d(ngf * 8),
             nn.ReLU(True),
-            # state size. (ngf*8) x 4 x 4
             nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
+            # state size. (ngf*4) x 8 x 8
             nn.BatchNorm2d(ngf * 4),
             nn.ReLU(True),
-            # state size. (ngf*4) x 8 x 8
             nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
+            # state size. (ngf*2) x 16 x 16
             nn.BatchNorm2d(ngf * 2),
             nn.ReLU(True),
-            # state size. (ngf*2) x 16 x 16
             nn.ConvTranspose2d(ngf * 2, ngf, 4, 2, 1, bias=False),
+            # state size. ngf x 32 x 32
             nn.BatchNorm2d(ngf),
             nn.ReLU(True),
-            nn.ConvTranspose2d(ngf, nc, kernel_size=1, stride=1, padding=0, bias=False),
-            # nn.AvgPool2d(2, 2),
-            nn.Tanh()
-        )
+        ]
+
+        if self.output_dim == 32:
+            modules.extend([
+                nn.ConvTranspose2d(ngf, nc, kernel_size=1, stride=1, padding=0, bias=False),
+                # state size. 3 x 32 x 32
+                nn.Tanh(),
+            ])
+        elif self.output_dim == 64:
+            modules.extend([
+                nn.ConvTranspose2d(ngf, ngf, kernel_size=4, stride=2, padding=1, bias=False),
+                # state size. ngf x 64 x 64
+                nn.BatchNorm2d(ngf),
+                nn.ReLU(True),
+                nn.ConvTranspose2d(ngf, nc, kernel_size=1, stride=1, padding=0, bias=False),
+                # state size. 3 x 64 x 64
+                nn.Tanh(),
+            ])
+        else:
+            raise RuntimeError('[DC-GAN] only 32 x 32 and 64 x 64 outputs supported')
+        super().__init__(*modules)
+        self.apply(weights_init)
 
     def forward(self, input):
-        if input.is_cuda and self.ngpu > 1:
-            output = nn.parallel.data_parallel(self.main, input, range(self.ngpu))
-        else:
-            output = self.main(input)
-        return output
+        return super().forward(input)  # real examples must lie in [-1, 1]
 
     def sample(self, num_samples):
         z_vecs = torch.randn(num_samples, self.input_dim, 1, 1)
@@ -45,35 +61,50 @@ class DCGenerator(nn.Module):
         return self(z_vecs)
 
 
-class DCDiscriminator(nn.Module):
-    def __init__(self, nc=3, ndf=64, **kwargs):
-        super(DCDiscriminator, self).__init__()
-        self.ngpu = torch.cuda.device_count()
-        self.main = nn.Sequential(
-            # input is (nc) x 64 x 64
-            nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
+class DCDiscriminator(nn.Sequential):
+    def __init__(self, input_size, nc=3, ndf=64, **kwargs):
+        if input_size == 32:
+            modules = [
+                nn.Conv2d(nc, ndf, kernel_size=1, stride=1, padding=0, bias=False),
+                nn.LeakyReLU(0.2, inplace=True),
+            ]
+        elif input_size == 64:
+            modules = [
+                nn.Conv2d(nc, ndf, kernel_size=4, stride=2, padding=1, bias=False),
+                nn.LeakyReLU(0.2, inplace=True),
+            ]
+        else:
+            raise RuntimeError('[DC-GAN] only 32 x 32 or 64 x 64 images supported')
+
+        modules.extend([
             # state size. (ndf) x 32 x 32
-            nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
+            nn.Conv2d(ndf, ndf * 2, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(ndf * 2),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*2) x 16 x 16
-            nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),
+            nn.Conv2d(ndf * 2, ndf * 4, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(ndf * 4),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*4) x 8 x 8
-            nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),
+            nn.Conv2d(ndf * 4, ndf * 8, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(ndf * 8),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*8) x 4 x 4
-            nn.Conv2d(ndf * 8, 1, 2, 2, 0, bias=False),
+            nn.Conv2d(ndf * 8, 1, kernel_size=4, stride=1, padding=0, bias=False),
             nn.Sigmoid()
-        )
+        ])
+        super().__init__(*modules)
+        self.ngpu = torch.cuda.device_count()
+        self.apply(weights_init)
 
-    def forward(self, input):
-        if input.is_cuda and self.ngpu > 1:
-            output = nn.parallel.data_parallel(self.main, input, range(self.ngpu))
-        else:
-            output = self.main(input)
+    def forward(self, inputs):
+        return super().forward(inputs)
 
-        return output.view(-1, 1).squeeze(1)
+
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+    elif classname.find('BatchNorm') != -1:
+        nn.init.normal_(m.weight.data, 1.0, 0.02)
+        nn.init.constant_(m.bias.data, 0)

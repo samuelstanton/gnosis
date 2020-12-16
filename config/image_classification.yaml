@@ -42,7 +42,7 @@ augmentation:
       - 0.1
       - 2.0
   transforms_list: crop,horizontal_flip
-
+  normalization: max_min
 
 teacher:
   num_components: 2
@@ -68,7 +68,7 @@ trainer:
     T_max: ${trainer.num_epochs}
   generator:
     enabled: False
-    gen_ratio: 0.2
+    gen_ratio: 0.0
 
 dataloader:
   _target_: torch.utils.data.DataLoader
@@ -78,10 +78,11 @@ dataloader:
 # Directories for loading and storing data
 seed:
 trial_id: 0
-exp_name: synth_aug_${trainer.generator.gen_ratio}/preresnet20_${teacher.num_components}-preresnet20_1-${dataset.name}
+exp_name: synth_aug_${trainer.generator.gen_ratio}_${version}/preresnet20_${teacher.num_components}-preresnet20_1-${dataset.name}
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis
+version: v0.0.2
 
 hydra:
   run:
