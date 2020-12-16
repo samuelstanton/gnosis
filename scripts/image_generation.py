@@ -22,6 +22,7 @@ def main(config):
 
     logger.add_table('train_metrics')
     for epoch in range(config.trainer.num_epochs):
+        print(f'---- EPOCH {epoch + 1} ----')
         metrics = dcgan_epoch(gen_net, disc_net, gen_opt, disc_opt, loss_fn, trainloader)
         logger.log(metrics, epoch + 1, 'train_metrics')
         logger.write_csv()

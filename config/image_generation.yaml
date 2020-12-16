@@ -8,6 +8,7 @@ generator:
   nc: 3
   nz: 100
   ngf: 64
+  output_dim: ${dataset.input_size}
 
 discriminator:
   _target_: gnosis.models.DCDiscriminator
@@ -28,15 +29,22 @@ dataloader:
   shuffle: True
   num_workers: 2
 
+augmentation:
+  resize:
+    _target_: torchvision.transforms.Resize
+    size: 64
+  normalization: max_min
+  transforms_list:
+
 # Directories for loading and storing data
-version: 0.0.1
 checkpoint_freq: ${trainer.num_epochs}
 seed:
 trial_id: 0
-exp_name: dcgan_${dataset.name}_v${version}
+exp_name: dcgan_${dataset.name}_${version}
 data_dir: data/experiments/image_generation
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis
+version: v0.0.2
 
 hydra:
   run:

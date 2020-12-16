@@ -8,7 +8,7 @@ def dcgan_epoch(gen_net, disc_net, gen_opt, disc_opt, loss_fn, dataloader):
     num_batches = len(dataloader)
     tot_gen_loss = tot_disc_loss = 0
     tot_real_prob = tot_fake_prob = 0
-    desc = f'[DC-GAN]  D-LOSS: {tot_disc_loss:0.4f}, G-LOSS: {tot_gen_loss: 0.4f}, ' \
+    desc = f'[DC-GAN] D-LOSS: {tot_disc_loss:0.4f}, G-LOSS: {tot_gen_loss: 0.4f}, ' \
            f'R-PROB: {tot_real_prob:0.4f}, G-PROB: {tot_fake_prob:0.4f}'
     prog_bar = tqdm(enumerate(dataloader), total=len(dataloader), desc=desc, leave=True)
     for i, (inputs, _) in prog_bar:
@@ -48,7 +48,8 @@ def dcgan_epoch(gen_net, disc_net, gen_opt, disc_opt, loss_fn, dataloader):
         tot_disc_loss += (disc_real_loss + disc_fake_loss).item()
         tot_real_prob += disc_real_outputs.mean(0).item()
         tot_fake_prob += disc_fake_outputs.mean(0).item()
-        desc = f'[DC-GAN]  D-LOSS: {tot_disc_loss / (i + 1):0.4f}, G-LOSS: {tot_gen_loss / (i + 1): 0.4f}, ' \
+        desc = f'[DC-GAN] D-LOSS: {tot_disc_loss / (i + 1):0.4f}, '\
+               f'G-LOSS: {tot_gen_loss / (i + 1): 0.4f}, ' \
                f'R-PROB: {tot_real_prob / (i + 1):0.4f}, G-PROB: {tot_fake_prob / (i + 1):0.4f}'
         prog_bar.set_description(desc, refresh=True)
 
