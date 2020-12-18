@@ -1,0 +1,15 @@
+# @package _group_
+_target_: gnosis.models.DCGAN
+name: dcgan
+gen_cfg:
+  _target_: gnosis.models.DCGenerator
+  nc: 3
+  nz: 100
+  ngf: 64
+  output_dim: ${dataset.input_size}
+  weight_file: ${data_dir}/dcgan_checkpoints/${dataset.name}/netG_epoch_199.pth
+disc_cfg:
+  _target_: gnosis.models.DCDiscriminator
+  input_size: ${dataset.input_size}
+  nc: 3
+  ndf: 64

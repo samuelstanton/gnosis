@@ -1,0 +1,13 @@
+# @package _group_
+_target_: gnosis.models.SNGAN
+name: sngan
+gen_cfg:
+  _target_: gnosis.models.SNGenerator
+  img_channels: 3
+  z_dim: 128
+  k: 256
+disc_cfg:
+  _target_: gnosis.models.SNDiscriminator
+  img_channels: 3
+  k: 128
+  out_size: 1

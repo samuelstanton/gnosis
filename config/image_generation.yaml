@@ -1,23 +1,11 @@
 defaults:
   - dataset: cifar10
+  - density_model: sngan
   - logger: local
   - hydra/launcher: basic
 
-generator:
-  _target_: gnosis.models.DCGenerator
-  nc: 3
-  nz: 100
-  ngf: 64
-  output_dim: ${dataset.input_size}
-
-discriminator:
-  _target_: gnosis.models.DCDiscriminator
-  input_size: ${dataset.input_size}
-  nc: 3
-  ndf: 64
-
 trainer:
-  num_epochs: 200
+  num_epochs: 500
   optimizer:
     lr: 2e-4
     beta1: 0.5
@@ -25,7 +13,7 @@ trainer:
 
 dataloader:
   _target_: torch.utils.data.DataLoader
-  batch_size: 128
+  batch_size: 64
   shuffle: True
   num_workers: 2
 
@@ -37,10 +25,10 @@ augmentation:
   transforms_list:
 
 # Directories for loading and storing data
-checkpoint_freq: ${trainer.num_epochs}
+checkpoint_freq: 100
 seed:
 trial_id: 0
-exp_name: dcgan_${dataset.name}_${version}
+exp_name: ${density_model.name}_${dataset.name}_${version}
 data_dir: data/experiments/image_generation
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis

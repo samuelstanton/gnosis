@@ -1,34 +1,32 @@
 import hydra
-from torch import optim, nn
+from torch import optim
 from gnosis.utils.scripting import startup
 from gnosis.utils.data import get_loaders
+from gnosis.boilerplate import gan_train_epoch
 from upcycle import cuda
-from gnosis.boilerplate import dcgan_epoch
 
 
 @hydra.main(config_path='../config/', config_name='image_generation.yaml')
 def main(config):
     config, logger, _ = startup(config)
-    trainloader, _ = get_loaders(config)
+    trainloader, testloader = get_loaders(config)
 
-    gen_net = hydra.utils.instantiate(config.generator)
-    disc_net = hydra.utils.instantiate(config.discriminator)
-    gen_net, disc_net = cuda.try_cuda(gen_net, disc_net)
+    gan = hydra.utils.instantiate(config.density_model)
+    gan = cuda.try_cuda(gan)
 
     opt_betas = (config.trainer.optimizer.beta1, config.trainer.optimizer.beta2)
-    gen_opt = optim.Adam(gen_net.parameters(), lr=config.trainer.optimizer.lr, betas=opt_betas)
-    disc_opt = optim.Adam(disc_net.parameters(), lr=config.trainer.optimizer.lr, betas=opt_betas)
-    loss_fn = nn.BCELoss()
+    gen_opt = optim.Adam(gan.generator.parameters(), lr=config.trainer.optimizer.lr, betas=opt_betas)
+    disc_opt = optim.Adam(gan.discriminator.parameters(), lr=config.trainer.optimizer.lr, betas=opt_betas)
 
     logger.add_table('train_metrics')
     for epoch in range(config.trainer.num_epochs):
-        print(f'---- EPOCH {epoch + 1} ----')
-        metrics = dcgan_epoch(gen_net, disc_net, gen_opt, disc_opt, loss_fn, trainloader)
+        metrics = gan_train_epoch(gan, gen_opt, disc_opt, trainloader, testloader)
+        print(f'[GAN] epoch: {epoch + 1}, FID: {metrics["fid_score"]:0.4f}, IS: {metrics["is_score"]:0.4f}')
         logger.log(metrics, epoch + 1, 'train_metrics')
         logger.write_csv()
         if epoch % config.checkpoint_freq == (config.checkpoint_freq - 1):
-            logger.save_obj(gen_net.state_dict(), f'{config.dataset.name}_generator_{epoch + 1}.ckpt')
-            logger.save_obj(disc_net.state_dict(), f'{config.dataset.name}_discriminator_{epoch + 1}.ckpt')
+            logger.save_obj(gan.generator.state_dict(), f'{config.dataset.name}_generator_{epoch + 1}.ckpt')
+            logger.save_obj(gan.discriminator.state_dict(), f'{config.dataset.name}_discriminator_{epoch + 1}.ckpt')
 
 
 if __name__ == '__main__':
