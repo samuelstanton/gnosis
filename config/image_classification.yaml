@@ -1,6 +1,7 @@
 defaults:
   - dataset: cifar10
-  - model: preresnet
+  - classifier: preresnet
+  - density_model: dcgan
   - logger: local
   - loss: symmetrized_kl
   - hydra/launcher: basic
@@ -47,14 +48,7 @@ augmentation:
 teacher:
   num_components: 2
   use_ckpts: True
-  ckpt_dir: ${data_dir}/classifier_checkpoints/${model.name}${model.depth}_${dataset.name}
-
-generator:
-  _target_: gnosis.models.DCGenerator
-  nc: 3
-  nz: 100
-  ngf: 64
-  weight_file: ${data_dir}/dcgan_checkpoints/${dataset.name}/netG_epoch_199.pth
+  ckpt_dir: ${data_dir}/classifier_checkpoints/${classifier.name}${classifier.depth}_${dataset.name}
 
 trainer:
   num_epochs: 200
@@ -66,9 +60,9 @@ trainer:
   lr_scheduler:
     _target_: torch.optim.lr_scheduler.CosineAnnealingLR
     T_max: ${trainer.num_epochs}
-  generator:
+  synth_aug:
     enabled: False
-    gen_ratio: 0.0
+    ratio: 0.0
 
 dataloader:
   _target_: torch.utils.data.DataLoader
@@ -78,7 +72,7 @@ dataloader:
 # Directories for loading and storing data
 seed:
 trial_id: 0
-exp_name: synth_aug_${trainer.generator.gen_ratio}_${version}/preresnet20_${teacher.num_components}-preresnet20_1-${dataset.name}
+exp_name: synth_aug_${trainer.synth_aug.ratio}_${version}/preresnet20_${teacher.num_components}-preresnet20_1-${dataset.name}
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis

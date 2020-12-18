@@ -1,0 +1,76 @@
+# @package hydra.launcher
+_target_: hydra_plugins.hydra_ray_launcher.ray_aws_launcher.RayAWSLauncher
+mandatory_install:
+  hydra_version: 1.0.3
+  ray_version: 1.0.1
+  cloudpickle_version: 1.6.0
+  omegaconf_version: 2.0.3
+  pickle5_version: 0.0.11
+  hydra_ray_launcher_version: 0.1.1
+  install_commands:
+#  - conda create -n hydra_${python_version:micro} python=${python_version:micro} -y
+#  - echo 'export PATH="$HOME/anaconda3/envs/hydra_${python_version:micro}/bin:$PATH"'
+#    >> ~/.bashrc
+  - pip3 install omegaconf==${hydra.launcher.mandatory_install.omegaconf_version}
+  - pip3 install hydra-core==${hydra.launcher.mandatory_install.hydra_version}
+  - pip3 install hydra-ray-launcher==${hydra.launcher.mandatory_install.hydra_ray_launcher_version}
+  - pip3 install ray==${hydra.launcher.mandatory_install.ray_version}
+  - pip3 install cloudpickle==${hydra.launcher.mandatory_install.cloudpickle_version}
+  - pip3 install pickle5==${hydra.launcher.mandatory_install.pickle5_version}
+ray_init_cfg: {}
+ray_remote_cfg: {}
+ray_cluster_cfg:
+  cluster_name: gnosis-cluster
+  min_workers: 0
+  max_workers: 2
+  initial_workers: 0
+  autoscaling_mode: default
+  target_utilization_fraction: 0.8
+  idle_timeout_minutes: 5
+  docker:
+    image: 'samuelstanton/gnosis:latest'
+    container_name: 'gnosis'
+    pull_before_run: true
+    run_options: []
+  provider:
+    type: aws
+    region: us-east-2
+    availability_zone: us-east-2a,us-east-2b
+    cache_stopped_nodes: false
+    key_pair:
+      key_name: hydra
+  auth:
+    ssh_user: ubuntu
+  head_node:
+    IamInstanceProfile:
+      Arn: arn:aws:iam::312649332277:instance-profile/ray-head-v1
+    InstanceType: p2.xlarge
+    ImageId: ami-08e16447bd5caf26a
+  worker_nodes:
+    IamInstanceProfile:
+      Arn: arn:aws:iam::312649332277:instance-profile/ray-worker-v1
+    InstanceType: p2.xlarge
+    ImageId: ami-08e16447bd5caf26a
+  file_mounts: {}
+  initialization_commands: []
+  setup_commands: []
+  head_setup_commands: []
+  worker_setup_commands: []
+  head_start_ray_commands:
+  - ray stop
+  - ulimit -n 65536; ray start --head --port=6379 --object-manager-port=8076
+    --autoscaling-config=~/ray_bootstrap_config.yaml
+  worker_start_ray_commands:
+  - ray stop
+  - ulimit -n 65536; ray start --address=$RAY_HEAD_IP:6379 --object-manager-port=8076
+stop_cluster: true
+sync_up:
+  source_dir: null
+  target_dir: null
+  include: []
+  exclude: []
+sync_down:
+  source_dir: null
+  target_dir: null
+  include: []
+  exclude: []
