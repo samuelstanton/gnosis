@@ -76,7 +76,7 @@ exp_name: synth_aug_${trainer.synth_aug.ratio}_${version}/preresnet20_${teacher.
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis
-version: v0.0.2
+version: v0.0.3
 
 hydra:
   run:

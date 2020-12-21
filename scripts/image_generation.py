@@ -20,7 +20,7 @@ def main(config):
 
     logger.add_table('train_metrics')
     for epoch in range(config.trainer.num_epochs):
-        metrics = gan_train_epoch(gan, gen_opt, disc_opt, trainloader, testloader)
+        metrics = gan_train_epoch(gan, gen_opt, disc_opt, trainloader, testloader, config.trainer)
         print(f'[GAN] epoch: {epoch + 1}, FID: {metrics["fid_score"]:0.4f}, IS: {metrics["is_score"]:0.4f}')
         logger.log(metrics, epoch + 1, 'train_metrics')
         logger.write_csv()

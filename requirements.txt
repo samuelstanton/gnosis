@@ -8,3 +8,4 @@ tabulate
 s3fs==0.4
 tqdm
 tensorboardX
+seaborn

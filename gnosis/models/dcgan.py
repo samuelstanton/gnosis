@@ -21,13 +21,15 @@ class DCGAN(nn.Module):
         gen_loss.backward()
         return gen_loss, fake_samples
 
-    def disc_backward(self, real_samples, fake_samples):
+    def disc_backward(self, real_samples):
         batch_size = real_samples.size(0)
         real_probs = self.discriminator(real_samples)
         labels = try_cuda(torch.full((batch_size,), 1.))
         real_loss = F.binary_cross_entropy(real_probs, labels)
         real_loss.backward()
 
+        with torch.no_grad():
+            fake_samples = self.generator.sample(batch_size)
         fake_probs = self.discriminator(fake_samples)
         labels = try_cuda(torch.full((batch_size,), 0.))
         fake_loss = F.binary_cross_entropy(fake_probs, labels)

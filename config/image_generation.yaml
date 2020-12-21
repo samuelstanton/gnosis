@@ -6,6 +6,7 @@ defaults:
 
 trainer:
   num_epochs: 500
+  num_disc_updates: 2
   optimizer:
     lr: 2e-4
     beta1: 0.5
@@ -32,7 +33,7 @@ exp_name: ${density_model.name}_${dataset.name}_${version}
 data_dir: data/experiments/image_generation
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis
-version: v0.0.2
+version: v0.0.3
 
 hydra:
   run:

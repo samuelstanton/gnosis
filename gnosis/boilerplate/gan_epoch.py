@@ -6,7 +6,7 @@ from oil.model_trainers.gan import GanLoader
 from torch.utils.data import DataLoader
 
 
-def gan_train_epoch(gan_module, gen_opt, disc_opt, train_loader, test_loader):
+def gan_train_epoch(gan_module, gen_opt, disc_opt, train_loader, test_loader, train_cfg):
     num_batches = len(train_loader)
     tot_gen_loss = tot_disc_loss = 0
     desc = f'[GAN] D-LOSS: {tot_disc_loss:0.4f}, G-LOSS: {tot_gen_loss: 0.4f}'
@@ -16,12 +16,13 @@ def gan_train_epoch(gan_module, gen_opt, disc_opt, train_loader, test_loader):
         batch_size = real_samples.size(0)
 
         gen_opt.zero_grad()
-        gen_loss, fake_samples = gan_module.gen_backward(batch_size)
+        gen_loss, _ = gan_module.gen_backward(batch_size)
         gen_opt.step()
 
-        disc_opt.zero_grad()
-        disc_loss = gan_module.disc_backward(real_samples, fake_samples.detach())
-        disc_opt.step()
+        for _ in range(train_cfg.num_disc_updates):
+            disc_opt.zero_grad()
+            disc_loss = gan_module.disc_backward(real_samples)
+            disc_opt.step()
 
         # logging
         tot_gen_loss += gen_loss.item()

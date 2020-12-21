@@ -16,15 +16,17 @@ class SNGAN(nn.Module):
 
     def gen_backward(self, batch_size):
         # Generator hinge loss
-        seed_noise = self.generator.sample_z(batch_size)
-        fake_samples = self.generator(seed_noise)
+        fake_samples = self.generator.sample(batch_size)
         fake_logits = self.discriminator(fake_samples)
         loss = -torch.mean(fake_logits)
         loss.backward()
         return loss, fake_samples
 
-    def disc_backward(self, real_samples, fake_samples):
+    def disc_backward(self, real_samples):
         # Discriminator hinge loss
+        batch_size = real_samples.size(0)
+        with torch.no_grad():
+            fake_samples = self.generator.sample(batch_size)
         real_logits = self.discriminator(real_samples)
         fake_logits = self.discriminator(fake_samples)
         loss = F.relu(1 - real_logits).mean() + F.relu(1 + fake_logits).mean()
