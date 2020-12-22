@@ -6,7 +6,7 @@ defaults:
 
 trainer:
   num_epochs: 500
-  num_disc_updates: 2
+  num_disc_updates: 5
   optimizer:
     lr: 2e-4
     beta1: 0.5
@@ -19,11 +19,18 @@ dataloader:
   num_workers: 2
 
 augmentation:
+  transforms_list: horizontal_flip
+  normalization: max_min
+  crop:
+    _target_: torchvision.transforms.RandomCrop
+    size: ${dataset.input_size}
+    padding: 4
+  horizontal_flip:
+    _target_: torchvision.transforms.RandomHorizontalFlip
   resize:
     _target_: torchvision.transforms.Resize
     size: 64
-  normalization: max_min
-  transforms_list:
+
 
 # Directories for loading and storing data
 checkpoint_freq: 100
@@ -33,7 +40,7 @@ exp_name: ${density_model.name}_${dataset.name}_${version}
 data_dir: data/experiments/image_generation
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis
-version: v0.0.3
+version: v0.0.4
 
 hydra:
   run:
