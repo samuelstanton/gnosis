@@ -5,22 +5,30 @@ defaults:
   - hydra/launcher: basic
 
 trainer:
-  num_epochs: 500
-  num_disc_updates: 5
+  num_gen_updates: 100000  # total number of generator gradient updates
+  gen_update_period: 5  # number of minibatches per generator update
+  disc_update_period: 1  # number of minibatches per discriminator update
+  eval_period: 1000  # number of generator updates per evaluation
+  num_eval_samples: 5000  # number of generator samples for FID and IS
+  checkpoint_period: 10000  # number of generator updates per checkpoint
   optimizer:
     lr: 2e-4
-    beta1: 0.5
-    beta2: 0.999
+    beta1: 0.0
+    beta2: 0.9
+  lr_decay:
+    min_lr: 1e-6
+    start: 0
+    stop: ${trainer.num_gen_updates}
 
 dataloader:
   _target_: torch.utils.data.DataLoader
-  batch_size: 64
+  batch_size: 128
   shuffle: True
   num_workers: 2
 
 augmentation:
   transforms_list: horizontal_flip
-  normalization: max_min
+  normalization: unit_cube
   crop:
     _target_: torchvision.transforms.RandomCrop
     size: ${dataset.input_size}
@@ -33,14 +41,13 @@ augmentation:
 
 
 # Directories for loading and storing data
-checkpoint_freq: 100
 seed:
 trial_id: 0
 exp_name: ${density_model.name}_${dataset.name}_${version}
 data_dir: data/experiments/image_generation
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis
-version: v0.0.4
+version: v0.0.7
 
 hydra:
   run:
