@@ -1,19 +1,6 @@
-import os
-import torch
 import hydra
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import random_split
 import torchvision
-
-from upcycle.cuda import try_cuda
-import gnosis
-
-
-def get_generator(config):
-    generator = hydra.utils.instantiate(config.generator)
-    weight_file = os.path.join(hydra.utils.get_original_cwd(), config.generator.weight_file)
-    weight_dict = torch.load(weight_file)
-    generator.load_state_dict(weight_dict)
-    return try_cuda(generator)
 
 
 def get_loaders(config):
@@ -58,7 +45,7 @@ def get_augmentation(config):
             torchvision.transforms.Normalize(config.dataset.statistics.mean_statistics,
                                              config.dataset.statistics.std_statistics)
         )
-    elif config.augmentation.normalization == 'max_min':
+    elif config.augmentation.normalization == 'unit_cube':
         # rescale values to [-1, 1]
         min_vals = config.dataset.statistics.min
         max_vals = config.dataset.statistics.max
