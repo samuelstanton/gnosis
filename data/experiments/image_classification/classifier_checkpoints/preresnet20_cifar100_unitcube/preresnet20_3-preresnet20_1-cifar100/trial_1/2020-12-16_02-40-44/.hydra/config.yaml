@@ -1,0 +1,110 @@
+augmentation:
+  random_apply:
+    _target_: torchvision.transforms.RandomApply
+    p: 1.0
+  rotation:
+    _target_: torchvision.transforms.RandomRotation
+    degrees: 90
+  crop:
+    _target_: torchvision.transforms.RandomCrop
+    size: 32
+    padding: 4
+  horizontal_flip:
+    _target_: torchvision.transforms.RandomHorizontalFlip
+  vertical_flip:
+    _target_: torchvision.transforms.RandomVerticalFlip
+  perspective:
+    _target_: torchvision.transforms.RandomPerspective
+    distortion_scale: 0.5
+    p: 0.5
+  grayscale:
+    _target_: torchvision.transforms.RandomGrayscale
+    p: 0.1
+  colorjitter:
+    _target_: torchvision.transforms.ColorJitter
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.2
+  gaussian_blur:
+    _target_: torchvision.transforms.GaussianBlur
+    kernel_size: 3
+    sigma:
+    - 0.1
+    - 2.0
+  transforms_list: crop,horizontal_flip
+  normalization: max_min
+teacher:
+  num_components: 3
+  use_ckpts: false
+  ckpt_dir: data/experiments/image_classification/classifier_checkpoints/preresnet20_cifar100
+generator:
+  _target_: gnosis.models.DCGenerator
+  nc: 3
+  nz: 100
+  ngf: 64
+  weight_file: data/experiments/image_classification/dcgan_checkpoints/cifar100/netG_epoch_199.pth
+trainer:
+  num_epochs: 200
+  optimizer:
+    _target_: torch.optim.SGD
+    lr: 0.1
+    weight_decay: 0.0001
+    momentum: 0.9
+  lr_scheduler:
+    _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+    T_max: 200
+  generator:
+    enabled: false
+    gen_ratio: 0.0
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 256
+  shuffle: true
+seed: 21741
+trial_id: 1
+exp_name: synth_aug_0.0_v0.0.2/preresnet20_3-preresnet20_1-cifar100
+data_dir: data/experiments/image_classification
+log_dir: data/experiments/image_classification/synth_aug_0.0_v0.0.2/preresnet20_3-preresnet20_1-cifar100/trial_1/2020-12-16_02-40-44
+project_name: gnosis
+version: v0.0.2
+dataset:
+  init:
+    _target_: torchvision.datasets.CIFAR100
+    root: /datasets/cifar100
+    download: true
+  name: cifar100
+  num_classes: 100
+  input_size: 32
+  subsample_ratio: 1.0
+  statistics:
+    mean_statistics:
+    - 0.5071
+    - 0.4867
+    - 0.4408
+    std_statistics:
+    - 0.2675
+    - 0.2565
+    - 0.2761
+    max:
+    - 1.0
+    - 1.0
+    - 1.0
+    min:
+    - 0.0
+    - 0.0
+    - 0.0
+model:
+  _target_: gnosis.models.PreResNet
+  name: preresnet
+  num_classes: 100
+  depth: 20
+  input_size: 32
+  skip_connections: true
+logger:
+  _target_: upcycle.logging.S3Logger
+  log_dir: projects/gnosis/data/experiments/image_classification/synth_aug_0.0_v0.0.2/preresnet20_3-preresnet20_1-cifar100/trial_1/2020-12-16_02-40-44
+  bucket_name: samuel-stanton-personal-bucket
+loss:
+  init:
+    _target_: gnosis.distillation.SymmetrizedKLLoss

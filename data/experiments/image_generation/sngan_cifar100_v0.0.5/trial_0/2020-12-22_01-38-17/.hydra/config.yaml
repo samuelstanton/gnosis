@@ -1,0 +1,75 @@
+trainer:
+  num_epochs: 500
+  num_disc_updates: 5
+  optimizer:
+    lr: 0.0002
+    beta1: 0.5
+    beta2: 0.999
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 64
+  shuffle: true
+  num_workers: 2
+augmentation:
+  transforms_list: horizontal_flip
+  normalization: max_min
+  crop:
+    _target_: torchvision.transforms.RandomCrop
+    size: 32
+    padding: 4
+  horizontal_flip:
+    _target_: torchvision.transforms.RandomHorizontalFlip
+  resize:
+    _target_: torchvision.transforms.Resize
+    size: 64
+checkpoint_freq: 100
+seed: 48191
+trial_id: 0
+exp_name: sngan_cifar100_v0.0.5
+data_dir: data/experiments/image_generation
+log_dir: data/experiments/image_generation/sngan_cifar100_v0.0.5/trial_0/2020-12-22_01-38-17
+project_name: gnosis
+version: v0.0.5
+dataset:
+  init:
+    _target_: torchvision.datasets.CIFAR100
+    root: /datasets/cifar100
+    download: true
+  name: cifar100
+  num_classes: 100
+  input_size: 32
+  subsample_ratio: 1.0
+  statistics:
+    mean_statistics:
+    - 0.5071
+    - 0.4867
+    - 0.4408
+    std_statistics:
+    - 0.2675
+    - 0.2565
+    - 0.2761
+    max:
+    - 1.0
+    - 1.0
+    - 1.0
+    min:
+    - 0.0
+    - 0.0
+    - 0.0
+density_model:
+  _target_: gnosis.models.SNGAN
+  name: sngan
+  gen_cfg:
+    _target_: oil.architectures.img_gen.resnetgan.Generator
+    img_channels: 3
+    z_dim: 128
+    k: 256
+  disc_cfg:
+    _target_: oil.architectures.img_gen.resnetgan.Discriminator
+    img_channels: 3
+    k: 128
+    out_size: 1
+logger:
+  _target_: upcycle.logging.S3Logger
+  log_dir: projects/gnosis/data/experiments/image_generation/sngan_cifar100_v0.0.5/trial_0/2020-12-22_01-38-17
+  bucket_name: samuel-stanton-personal-bucket
