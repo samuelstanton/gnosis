@@ -1,27 +1,24 @@
 defaults:
   - dataset: cifar10
+  - density_model: sngan
   - logger: local
   - hydra/launcher: basic
 
-generator:
-  _target_: gnosis.models.DCGenerator
-  nc: 3
-  nz: 100
-  ngf: 64
-  output_dim: ${dataset.input_size}
-
-discriminator:
-  _target_: gnosis.models.DCDiscriminator
-  input_size: ${dataset.input_size}
-  nc: 3
-  ndf: 64
-
 trainer:
-  num_epochs: 200
+  num_gen_updates: 100000  # total number of generator gradient updates
+  gen_update_period: 5  # number of minibatches per generator update
+  disc_update_period: 1  # number of minibatches per discriminator update
+  eval_period: 1000  # number of generator updates per evaluation
+  num_eval_samples: 5000  # number of generator samples for FID and IS
+  checkpoint_period: 10000  # number of generator updates per checkpoint
   optimizer:
     lr: 2e-4
-    beta1: 0.5
-    beta2: 0.999
+    beta1: 0.0
+    beta2: 0.9
+  lr_decay:
+    min_lr: 1e-6
+    start: 0
+    stop: ${trainer.num_gen_updates}
 
 dataloader:
   _target_: torch.utils.data.DataLoader
@@ -30,21 +27,27 @@ dataloader:
   num_workers: 2
 
 augmentation:
+  transforms_list: horizontal_flip
+  normalization: unit_cube
+  crop:
+    _target_: torchvision.transforms.RandomCrop
+    size: ${dataset.input_size}
+    padding: 4
+  horizontal_flip:
+    _target_: torchvision.transforms.RandomHorizontalFlip
   resize:
     _target_: torchvision.transforms.Resize
     size: 64
-  normalization: max_min
-  transforms_list:
+
 
 # Directories for loading and storing data
-checkpoint_freq: ${trainer.num_epochs}
 seed:
 trial_id: 0
-exp_name: dcgan_${dataset.name}_${version}
+exp_name: ${density_model.name}_${dataset.name}_${version}
 data_dir: data/experiments/image_generation
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 project_name: gnosis
-version: v0.0.2
+version: v0.0.7
 
 hydra:
   run:

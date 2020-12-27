@@ -1,3 +1,5 @@
+git+https://github.com/mfinzi/olive-oil-ml@master#egg=olive-oil-ml
+git+https://github.com/samuelstanton/upcycle.git@master#egg=upcycle
 hydra-core>=1.0
 torch>=1.6
 torchvision>=0.7
@@ -6,3 +8,4 @@ tabulate
 s3fs==0.4
 tqdm
 tensorboardX
+seaborn

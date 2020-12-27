@@ -1,0 +1,15 @@
+# @package _group_
+_target_: gnosis.models.DCGAN
+name: dcgan
+gen_weight_dir: data/experiments/image_generation/dcgan_${dataset.name}_v0.0.1
+gen_cfg:
+  _target_: gnosis.models.DCGenerator
+  nc: 3
+  nz: 100
+  ngf: 64
+  output_dim: ${dataset.input_size}
+disc_cfg:
+  _target_: gnosis.models.DCDiscriminator
+  input_size: ${dataset.input_size}
+  nc: 3
+  ndf: 64

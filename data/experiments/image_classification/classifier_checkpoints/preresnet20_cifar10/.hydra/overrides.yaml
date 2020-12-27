@@ -1,4 +1,0 @@
-- teacher.num_components=1
-- teacher.use_ckpts=False
-- trial_id=9
-- exp_name=preresnet20_1-preresnet20_1-kl-cifar10-v0.0.2

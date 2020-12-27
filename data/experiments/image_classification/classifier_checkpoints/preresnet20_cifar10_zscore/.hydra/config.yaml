@@ -1,0 +1,94 @@
+augmentation:
+  random_apply:
+    _target_: torchvision.transforms.RandomApply
+    p: 1.0
+  rotation:
+    _target_: torchvision.transforms.RandomRotation
+    degrees: 90
+  crop:
+    _target_: torchvision.transforms.RandomCrop
+    size: ${dataset.input_size}
+    padding: 4
+  horizontal_flip:
+    _target_: torchvision.transforms.RandomHorizontalFlip
+  vertical_flip:
+    _target_: torchvision.transforms.RandomVerticalFlip
+  perspective:
+    _target_: torchvision.transforms.RandomPerspective
+    distortion_scale: 0.5
+    p: 0.5
+  grayscale:
+    _target_: torchvision.transforms.RandomGrayscale
+    p: 0.1
+  colorjitter:
+    _target_: torchvision.transforms.ColorJitter
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.2
+  gaussian_blur:
+    _target_: torchvision.transforms.GaussianBlur
+    kernel_size: 3
+    sigma:
+    - 0.1
+    - 2.0
+  transforms_list: crop,horizontal_flip
+teacher:
+  num_components: 1
+  use_ckpts: false
+  ckpt_dir: ${data_dir}/preresnet20_1-preresnet20_1-kl-${dataset.name}-v0.0.2
+generator:
+  _target_: gnosis.models.DCGenerator
+  nc: 3
+  nz: 100
+  ngf: 64
+  weight_file: ${data_dir}/dcgan_checkpoints/${dataset.name}/netG_epoch_199.pth
+trainer:
+  num_epochs: 200
+  optimizer:
+    _target_: torch.optim.SGD
+    lr: 0.1
+    weight_decay: 0.0001
+    momentum: 0.9
+  lr_scheduler:
+    _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+    T_max: ${trainer.num_epochs}
+  generator:
+    enabled: false
+    gen_ratio: 0.2
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 256
+  shuffle: true
+seed: null
+trial_id: 9
+exp_name: preresnet20_1-preresnet20_1-kl-cifar10-v0.0.2
+data_dir: data/experiments/image_classification
+log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
+dataset:
+  init:
+    _target_: torchvision.datasets.CIFAR10
+    root: /datasets/cifar10
+    download: true
+  name: cifar10
+  num_classes: 10
+  input_size: 32
+  subsample_ratio: 1.0
+  statistics:
+    mean_statistics:
+    - 0.4914
+    - 0.4822
+    - 0.4465
+    std_statistics:
+    - 0.2023
+    - 0.1994
+    - 0.201
+model:
+  _target_: gnosis.models.PreResNet
+  num_classes: ${dataset.num_classes}
+  depth: 20
+  input_size: ${dataset.input_size}
+  skip_connections: true
+logger:
+  _target_: upcycle.logging.DataFrameLogger
+  log_dir: ./

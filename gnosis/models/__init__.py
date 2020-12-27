@@ -1,6 +1,7 @@
 from .preresnet import PreResNet
 from .ensemble import ClassifierEnsemble
-from .dcgan import DCGenerator, DCDiscriminator
+from .dcgan import DCGenerator, DCDiscriminator, DCGAN
+from .sngan import SNGAN
 
 
 __all__ = [
@@ -8,4 +9,6 @@ __all__ = [
     "ClassifierEnsemble",
     "DCGenerator",
     "DCDiscriminator",
+    "SNGAN",
+    "DCGAN"
 ]
