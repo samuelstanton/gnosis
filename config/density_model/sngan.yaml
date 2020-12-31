@@ -1,5 +1,6 @@
 # @package _group_
 _target_: gnosis.models.SNGAN
+_recursive_: False
 name: sngan
 gen_weight_dir: data/experiments/image_generation/sngan_${dataset.name}_v0.0.5
 gen_cfg:

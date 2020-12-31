@@ -1,7 +1,7 @@
-git+https://github.com/mfinzi/olive-oil-ml@master#egg=olive-oil-ml
-git+https://github.com/samuelstanton/upcycle.git@master#egg=upcycle
-hydra-core>=1.0
-torch>=1.6
+ray==1.0.1
+cloudpickle==1.6.0
+pickle5==0.0.11
+torch>=1.7
 torchvision>=0.7
 pandas>=1.0
 tabulate

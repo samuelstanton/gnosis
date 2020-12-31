@@ -84,7 +84,7 @@ class BaseClassificationDistillationLoss(ABC):
     @staticmethod
     @abstractmethod
     def teacher_student_loss(teacher_logits, student_logits):
-        pass
+        raise NotImplementedError
 
 
 class TeacherStudentKLLoss(BaseClassificationDistillationLoss):
@@ -145,3 +145,14 @@ class AveragedSymmetrizedKLLoss(BaseClassificationDistillationLoss):
         reversed_kl = kl_divergence(student_dist, teacher_dist).mean()
 
         return kl + reversed_kl
+
+
+class TeacherStudentCrossEntLoss(BaseClassificationDistillationLoss):
+    """
+    Standard cross-entropy loss w.r.t. the hard teacher labels
+    """
+    @staticmethod
+    def teacher_student_loss(teacher_logits, student_logits):
+        teacher_labels = torch.argmax(teacher_logits, dim=-1)
+        loss = F.cross_entropy(student_logits, teacher_labels)
+        return loss
