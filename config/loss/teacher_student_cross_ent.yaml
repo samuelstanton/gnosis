@@ -1,0 +1,3 @@
+# @package _group_
+init:
+  _target_: gnosis.distillation.TeacherStudentCrossEntLoss
