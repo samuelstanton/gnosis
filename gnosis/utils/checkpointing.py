@@ -8,18 +8,27 @@ from omegaconf import OmegaConf
 from upcycle.cuda import try_cuda
 
 
-def load_teachers(ckpt_dir):
-    ckpt_path = os.path.join(hydra.utils.get_original_cwd(), ckpt_dir)
+def get_proj_dir(config):
+    if config.project_dir is None:
+        return hydra.utils.get_original_cwd()
+    if config.project_dir.lower() == 'cwd':
+        return hydra.utils.get_original_cwd()
+    return config.project_dir
+
+
+def load_teachers(config):
+    proj_dir = get_proj_dir(config)
+    ckpt_path = os.path.join(proj_dir, config.teacher.ckpt_dir)
     ckpt_path = os.path.normpath(ckpt_path)
     ckpt_path = Path(ckpt_path)
     config_files = list(ckpt_path.rglob('config.yaml'))
     ckpt_files = list(ckpt_path.rglob('teacher_*.ckpt'))
 
     if len(config_files) == 0:
-        print(f"no model config files found in {ckpt_dir}")
+        print(f"no model config files found in {ckpt_path}")
         return []
     if len(ckpt_files) == 0:
-        print(f"no checkpoints found in {ckpt_dir}")
+        print(f"no checkpoints found in {ckpt_path}")
         return []
 
     cfg_file = config_files[0]
@@ -40,7 +49,8 @@ def load_teachers(ckpt_dir):
 def load_generator(config):
     print('==== loading generator checkpoint ====')
     generator = hydra.utils.instantiate(config.density_model.gen_cfg)
-    weight_dir = os.path.join(hydra.utils.get_original_cwd(), config.density_model.gen_weight_dir)
+    proj_dir = get_proj_dir(config)
+    weight_dir = os.path.join(proj_dir, config.density_model.gen_weight_dir)
     search_pattern = '*generator_500.ckpt'
     print(f'searching in {weight_dir}')
     ckpt_files = Path(weight_dir).rglob(search_pattern)

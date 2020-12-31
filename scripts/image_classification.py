@@ -15,7 +15,7 @@ def main(config):
     trainloader, testloader = get_loaders(config)
     tb_logger.add_text("hypers/transforms", config.augmentation.transforms_list, 0)
 
-    teachers = load_teachers(config.teacher.ckpt_dir)
+    teachers = load_teachers(config)
     if len(teachers) >= config.teacher.num_components and config.teacher.use_ckpts is True:
         teachers = [try_cuda(teachers[i]) for i in range(config.teacher.num_components)]
     else:
