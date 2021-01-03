@@ -28,7 +28,7 @@ dataloader:
 
 augmentation:
   transforms_list: horizontal_flip
-  normalization: unit_cube
+  normalization: unitcube
   crop:
     _target_: torchvision.transforms.RandomCrop
     size: ${dataset.input_size}

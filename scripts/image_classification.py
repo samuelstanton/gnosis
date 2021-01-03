@@ -46,6 +46,7 @@ def main(config):
 
     generator = None
     if config.trainer.synth_aug.enabled and config.trainer.synth_aug.ratio > 0:
+        assert config.augmentation.normalization == 'unitcube'  # GANs use Tanh activations when sampling
         generator = load_generator(config)[0]
     student_base_loss = hydra.utils.instantiate(config.loss.init)
     student_loss = distillation.ClassifierStudentLoss(

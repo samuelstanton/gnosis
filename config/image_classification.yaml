@@ -43,12 +43,15 @@ augmentation:
       - 0.1
       - 2.0
   transforms_list: crop,horizontal_flip
-  normalization: unit_cube
+  normalization: unitcube
 
 teacher:
+  depth: ${classifier.depth}
   num_components: 1
   use_ckpts: True
-  ckpt_dir: data/experiments/image_classification/classifier_checkpoints/${classifier.name}${classifier.depth}_${dataset.name}_unitcube
+  ckpt_dir:
+            "data/experiments/image_classification/classifier_checkpoints/\
+            ${classifier.name}${classifier.depth}_${dataset.name}_${augmentation.normalization}"
 
 trainer:
   num_epochs: 200
@@ -69,17 +72,22 @@ dataloader:
   batch_size: 256
   shuffle: True
 
-# Directories for loading and storing data
 seed:
 trial_id: 0
-exp_name: synth_aug_${trainer.synth_aug.ratio}_${dataset.name}_${version}/preresnet20_${teacher.num_components}-preresnet20_1
-data_dir: data/experiments/image_classification
-log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
-ckpt_store: local
-s3_bucket: samuel-stanton-personal-bucket
-project_dir: /home/sam/Code/remote/gnosis
 project_name: gnosis
 version: v0.0.7
+
+# Directories for loading and storing data
+project_dir: /home/sam/Code/remote/gnosis
+data_dir: data/experiments/image_classification
+log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
+exp_name:
+        "synth_aug_${trainer.synth_aug.ratio}_${dataset.name}_${loss.name}_${version}/\
+         preresnet${teacher.depth}_${teacher.num_components}-preresnet${classifier.depth}_1"
+
+# Checkpointing
+ckpt_store: local
+s3_bucket: samuel-stanton-personal-bucket
 
 hydra:
   run:

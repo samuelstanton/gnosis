@@ -14,7 +14,7 @@ ray:
     max_workers: 7
     initial_workers: 0
     autoscaling_mode: default
-    target_utilization_fraction: 1.0
+    target_utilization_fraction: 0.8
     idle_timeout_minutes: 5
     docker:
       image: 'samuelstanton/gnosis:py3.8_cuda11'

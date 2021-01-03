@@ -26,6 +26,7 @@ def load_teachers(config):
     teacher_cfg = OmegaConf.create(config_ckpts[0])
     if 'classifier' not in teacher_cfg.keys():
         teacher_cfg.classifier = teacher_cfg.model  # support old checkpoint configs
+    assert teacher_cfg.classifier.depth == config.teacher.depth  # confirm checkpoints are correct depth
     teachers = []
     for state_dict in weight_ckpts:
         model = instantiate(teacher_cfg.classifier)
