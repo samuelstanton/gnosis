@@ -1,16 +1,20 @@
-from .classification import ClassifierStudentLoss
-from .classification import ClassifierTeacherLoss
-from .classification import BaseClassificationDistillationLoss
-from .classification import TeacherStudentKLLoss
-from .classification import SymmetrizedKLLoss
-from .classification import BrierLoss
-from .classification import AveragedSymmetrizedKLLoss
+from .classification import (
+    ClassifierStudentLoss,
+    ClassifierTeacherLoss,
+    BaseClassificationDistillationLoss,
+    TeacherStudentCrossEntLoss,
+    TeacherStudentKLLoss,
+    SymmetrizedKLLoss,
+    BrierLoss,
+    AveragedSymmetrizedKLLoss,
+)
 
 
 __all__ = [
     "ClassifierTeacherLoss",
     "ClassifierStudentLoss",
     "BaseClassificationDistillationLoss",
+    "TeacherStudentCrossEntLoss",
     "TeacherStudentKLLoss",
     "SymmetrizedKLLoss",
     "BrierLoss",

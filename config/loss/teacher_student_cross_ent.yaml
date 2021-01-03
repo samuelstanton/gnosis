@@ -1,0 +1,5 @@
+# @package _group_
+name: cross_ent
+init:
+  _target_: gnosis.distillation.TeacherStudentCrossEntLoss
+  corruption_ratio: 0.

@@ -15,11 +15,13 @@ def main(config):
     trainloader, testloader = get_loaders(config)
     tb_logger.add_text("hypers/transforms", config.augmentation.transforms_list, 0)
 
-    teachers = load_teachers(config.teacher.ckpt_dir)
+    try:
+        teachers = load_teachers(config)
+    except FileNotFoundError:
+        teachers = []
     if len(teachers) >= config.teacher.num_components and config.teacher.use_ckpts is True:
         teachers = [try_cuda(teachers[i]) for i in range(config.teacher.num_components)]
     else:
-        teachers = []
         for i in range(config.teacher.num_components):
             model = hydra.utils.instantiate(config.classifier)
             model = try_cuda(model)
@@ -42,11 +44,15 @@ def main(config):
     student = hydra.utils.instantiate(config.classifier)
     student = try_cuda(student)
 
-    generator = load_generator(config) if config.trainer.synth_aug.enabled else None
+    generator = None
+    if config.trainer.synth_aug.enabled and config.trainer.synth_aug.ratio > 0:
+        assert config.augmentation.normalization == 'unitcube'  # GANs use Tanh activations when sampling
+        generator = load_generator(config)[0]
     student_base_loss = hydra.utils.instantiate(config.loss.init)
     student_loss = distillation.ClassifierStudentLoss(
         teacher, student, student_base_loss, generator,
         gen_ratio=config.trainer.synth_aug.ratio)
+
     print(f"==== distilling student classifier ====")
     student, records = train_loop(config, student, student_loss, trainloader, testloader, tb_logger)
     for r in records:

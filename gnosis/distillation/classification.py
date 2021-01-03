@@ -49,8 +49,7 @@ class BaseClassificationDistillationLoss(ABC):
     """Abstract class that defines interface for distillation losses.
     """
 
-    @classmethod
-    def __call__(cls, teacher_logits, student_logits, teacher_temperature=1.):
+    def __call__(self, teacher_logits, student_logits, teacher_temperature=1.):
         """Evaluate loss.
 
         :param teacher_logits: tensor of teacher model logits of size
@@ -60,14 +59,14 @@ class BaseClassificationDistillationLoss(ABC):
         :param teacher_temperature: temperature to apply to the teacher logits
         :return: scalar loss value
         """
-        teacher_logits = cls._reduce_teacher_predictions(teacher_logits)
-        teacher_logits = cls._temper_predictions(teacher_logits,
-                                                 teacher_temperature)
+        teacher_logits = self._reduce_teacher_predictions(teacher_logits)
+        teacher_logits = self._temper_predictions(teacher_logits,
+                                                  teacher_temperature)
         assert teacher_logits.shape == student_logits.shape, \
             "Shape mismatch: teacher logits" \
             "have shape {} and student logits have shape {}".format(
                     teacher_logits.shape, student_logits.shape)
-        return cls.teacher_student_loss(teacher_logits, student_logits)
+        return self.teacher_student_loss(teacher_logits, student_logits)
 
     @staticmethod
     def _reduce_teacher_predictions(teacher_logits):
@@ -84,7 +83,7 @@ class BaseClassificationDistillationLoss(ABC):
     @staticmethod
     @abstractmethod
     def teacher_student_loss(teacher_logits, student_logits):
-        pass
+        raise NotImplementedError
 
 
 class TeacherStudentKLLoss(BaseClassificationDistillationLoss):
@@ -145,3 +144,25 @@ class AveragedSymmetrizedKLLoss(BaseClassificationDistillationLoss):
         reversed_kl = kl_divergence(student_dist, teacher_dist).mean()
 
         return kl + reversed_kl
+
+
+class TeacherStudentCrossEntLoss(BaseClassificationDistillationLoss):
+    """
+    Standard cross-entropy loss w.r.t. the hard teacher labels
+    """
+    def __init__(self, corruption_ratio=0., **kwargs):
+        super().__init__()
+        self.corruption_ratio = corruption_ratio
+
+    def teacher_student_loss(self, teacher_logits, student_logits):
+        batch_size, num_classes = teacher_logits.shape
+        teacher_labels = torch.argmax(teacher_logits, dim=-1)
+        num_corrupted = int(batch_size * self.corruption_ratio)
+
+        if num_corrupted > 0:
+            rand_labels = torch.randint(0, num_classes, (num_corrupted,), device=teacher_labels.device)
+            corrupt_idxs = torch.randint(0, batch_size, (num_corrupted,))
+            teacher_labels[corrupt_idxs] = rand_labels
+
+        loss = F.cross_entropy(student_logits, teacher_labels)
+        return loss

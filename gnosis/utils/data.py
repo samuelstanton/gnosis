@@ -39,13 +39,13 @@ def get_augmentation(config):
     normalize_transforms = [
         torchvision.transforms.ToTensor(),
     ]
-    if config.augmentation.normalization == 'z_score':
+    if config.augmentation.normalization == 'zscore':
         # mean subtract and scale to unit variance
         normalize_transforms.append(
             torchvision.transforms.Normalize(config.dataset.statistics.mean_statistics,
                                              config.dataset.statistics.std_statistics)
         )
-    elif config.augmentation.normalization == 'unit_cube':
+    elif config.augmentation.normalization == 'unitcube':
         # rescale values to [-1, 1]
         min_vals = config.dataset.statistics.min
         max_vals = config.dataset.statistics.max
