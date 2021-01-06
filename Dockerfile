@@ -1,7 +1,6 @@
 FROM nvidia/cuda:11.0-cudnn8-devel-ubuntu18.04
 
 ENV LD_LIBRARY_PATH /usr/local/cuda-11.0/lib64:/usr/local/cuda-11.0/extras/CUPTI/lib64:$LD_LIBRARY_PATH
-ENV CUDA_VISIBLE_DEVICES 0
 
 # Ray freaks out if this isn't here
 ENV LC_ALL=C.UTF-8
@@ -27,6 +26,7 @@ RUN apt install curl unzip -y && \
     unzip awscli-bundle.zip && \
     ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
 
+COPY datasets /datasets
 # copy over source code
 RUN mkdir -p /home/sam/Code/remote
 WORKDIR /home/sam/Code/remote

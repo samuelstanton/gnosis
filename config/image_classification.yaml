@@ -63,6 +63,7 @@ trainer:
   lr_scheduler:
     _target_: torch.optim.lr_scheduler.CosineAnnealingLR
     T_max: ${trainer.num_epochs}
+  distill_teacher: True
   synth_aug:
     enabled: False
     ratio: 0.0

@@ -36,6 +36,9 @@ def main(config):
             logger.write_csv()
             logger.save_obj(model.state_dict(), f'teacher_{i}.ckpt')
 
+    if config.trainer.distill_teacher is False:
+        return None
+
     print('==== ensembling teacher classifiers ====')
     teacher = models.ClassifierEnsemble(*teachers)
     _, teacher_train_acc = eval_epoch(teacher, trainloader, models.ensemble.ClassifierEnsembleLoss(teacher))
