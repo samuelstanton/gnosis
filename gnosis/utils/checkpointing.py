@@ -10,16 +10,16 @@ from upcycle.cuda import try_cuda
 from upcycle.checkpointing import s3_load_yaml, s3_load_obj
 
 
-def load_teachers(config):
+def load_teachers(config, ckpt_pattern='*teacher_*.ckpt'):
     if config.ckpt_store == 'local':
         proj_dir = get_proj_dir(config)
         ckpt_path = os.path.join(proj_dir, config.teacher.ckpt_dir)
         ckpt_path = os.path.normpath(ckpt_path)
         config_ckpts = local_load_yaml(ckpt_path, 'config.yaml')
-        weight_ckpts = local_load_obj(ckpt_path, 'teacher_*.ckpt')
+        weight_ckpts = local_load_obj(ckpt_path, ckpt_pattern)
     elif config.ckpt_store == 's3':
         config_ckpts = s3_load_yaml(config.s3_bucket, config.teacher.ckpt_dir, '*config.yaml')
-        weight_ckpts = s3_load_obj(config.s3_bucket, config.teacher.ckpt_dir, '*teacher_*.ckpt')
+        weight_ckpts = s3_load_obj(config.s3_bucket, config.teacher.ckpt_dir, ckpt_pattern)
     else:
         raise RuntimeError('unrecognized checkpoint store')
 

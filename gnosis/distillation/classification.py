@@ -71,7 +71,7 @@ class BaseClassificationDistillationLoss(ABC):
     @staticmethod
     def _reduce_teacher_predictions(teacher_logits):
         if len(teacher_logits.shape) == 3:
-            teacher_logits = F.log_softmax(teacher_logits, dim=2)
+            teacher_logits = F.log_softmax(teacher_logits, dim=-1)
             n_teachers = len(teacher_logits)
             return torch.logsumexp(teacher_logits, dim=0) - math.log(n_teachers)
         return teacher_logits

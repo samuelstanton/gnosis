@@ -12,6 +12,8 @@ def get_loaders(config):
     if subsample_ratio > 0.:
         train_dataset, _ = split_dataset(train_dataset, subsample_ratio)
         test_dataset, _ = split_dataset(test_dataset, subsample_ratio)
+    if config.trainer.eval_dataset == 'val':
+        train_dataset, test_dataset = split_dataset(train_dataset, 0.8)
 
     train_loader = hydra.utils.instantiate(config.dataloader, dataset=train_dataset)
     test_loader = hydra.utils.instantiate(config.dataloader, dataset=test_dataset)
