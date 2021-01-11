@@ -27,12 +27,13 @@ class ClassifierStudentLoss(object):
         self.gen_ratio = gen_ratio
         self.base_loss = base_loss
 
-    def __call__(self, inputs, *args):
+    def __call__(self, inputs, targets):
         batch_size = inputs.size(0)
         if self.generator is not None and self.gen_ratio > 0:
             num_generated = math.ceil(batch_size * self.gen_ratio)
             self.generator.eval()
-            synth_inputs = self.generator.sample(num_generated)
+            with torch.no_grad():
+                synth_inputs = self.generator.sample(num_generated)
             inputs = torch.cat([inputs, synth_inputs], dim=0)
 
         with torch.no_grad():
@@ -40,7 +41,9 @@ class ClassifierStudentLoss(object):
 
         student_logits = self.student(inputs)
         student_logp = student_logits.log_softmax(dim=-1)
-        loss = self.base_loss(teacher_logp, student_logp)
+        hard_loss = F.cross_entropy(student_logits[:batch_size], targets)
+        soft_loss = self.base_loss(teacher_logp, student_logp)
+        loss = hard_loss + soft_loss
 
         return loss, student_logits[:batch_size]
 

@@ -3,7 +3,7 @@ defaults:
   - classifier: preresnet
   - density_model: sngan
   - logger: local
-  - loss: symmetrized_kl
+  - loss: teacher_student_kl
   - hydra/launcher: basic
 
 augmentation:
@@ -55,18 +55,18 @@ teacher:
 
 trainer:
   num_epochs: 200
-  eval_period: 1
+  eval_period: 10
   eval_dataset: test
   optimizer:
     _target_: torch.optim.SGD
-    lr: 1e-1
+    lr: 5e-2
     weight_decay: 1e-4
     momentum: 0.9
-    nesterov: False
+    nesterov: True
   lr_scheduler:
     _target_: torch.optim.lr_scheduler.CosineAnnealingLR
     T_max: ${trainer.num_epochs}
-    eta_min: 1e-6
+    eta_min: 1e-4
   distill_teacher: True
   synth_aug:
     enabled: True
@@ -74,25 +74,25 @@ trainer:
 
 dataloader:
   _target_: torch.utils.data.DataLoader
-  batch_size: 256
+  batch_size: 128
   shuffle: True
 
 seed:
 trial_id: 0
 project_name: gnosis
-version: v0.0.7
+version: v0.0.8
 
 # Directories for loading and storing data
 project_dir: /home/sam/Code/remote/gnosis
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 exp_name:
-         "ax_sweep/${trainer.optimizer.lr}_${trainer.lr_scheduler.eta_min}_\
-          ${trainer.optimizer.momentum}_${trainer.synth_aug.ratio}_\
-          ${trainer.optimizer.nesterov}_${dataloader.batch_size}"
+#         "ax_sweep/${trainer.optimizer.lr}_${trainer.lr_scheduler.eta_min}_\
+#          ${trainer.optimizer.momentum}_${trainer.synth_aug.ratio}_\
+#          ${trainer.optimizer.nesterov}_${dataloader.batch_size}"
 
-#        "synth_aug_${trainer.synth_aug.ratio}_${dataset.name}_${loss.name}_${version}/\
-#         preresnet${teacher.depth}_${teacher.num_components}-preresnet${classifier.depth}_1"
+        "synth_aug_${trainer.synth_aug.ratio}_${dataset.name}_${loss.name}_${version}/\
+         preresnet${teacher.depth}_${teacher.num_components}-preresnet${classifier.depth}_1"
 
 # Checkpointing
 ckpt_store: local
