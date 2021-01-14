@@ -57,8 +57,8 @@ def main(config):
 
     print('==== ensembling teacher classifiers ====')
     teacher = models.ClassifierEnsemble(*teachers)
-    _, teacher_train_acc = eval_epoch(teacher, trainloader, models.ensemble.ClassifierEnsembleLoss(teacher))
-    _, teacher_test_acc = eval_epoch(teacher, testloader, models.ensemble.ClassifierEnsembleLoss(teacher))
+    teacher_train_metrics = eval_epoch(teacher, trainloader, models.ensemble.ClassifierEnsembleLoss(teacher))
+    teacher_test_metrics = eval_epoch(teacher, testloader, models.ensemble.ClassifierEnsembleLoss(teacher))
 
     student = hydra.utils.instantiate(config.classifier)
     student = try_cuda(student)
@@ -88,7 +88,8 @@ def main(config):
         tb_prefix="student/"
     )
     for r in records:
-        r.update(dict(teacher_test_acc=teacher_test_acc, teacher_train_acc=teacher_train_acc))
+        r.update(dict(teacher_train_acc=teacher_train_metrics['test_acc'],
+                      teacher_test_acc=teacher_test_metrics['test_acc']))
     logger.add_table(f'student_train_metrics', records)
     logger.write_csv()
     logger.save_obj(student.state_dict(), f'student.ckpt')

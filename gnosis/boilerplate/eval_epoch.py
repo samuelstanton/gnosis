@@ -14,8 +14,8 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
             % (test_loss / (0 + 1), 0, correct, total))
 
     prog_bar = tqdm(enumerate(loader), total=len(loader), desc=desc, leave=True)
-    with torch.no_grad():
-        for batch_idx, (inputs, targets) in prog_bar:
+    for batch_idx, (inputs, targets) in prog_bar:
+        with torch.no_grad():
             inputs, targets = try_cuda(inputs, targets)
             loss_args = [inputs, targets]
             if teacher is not None:
@@ -36,7 +36,7 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
             prog_bar.set_description(desc, refresh=True)
 
     metrics = dict(
-        test_loss=test_loss / (batch_idx + 1),
+        test_loss=test_loss / len(loader),
         test_acc=100. * correct / total
     )
     if teacher is not None:

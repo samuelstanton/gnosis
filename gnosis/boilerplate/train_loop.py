@@ -1,6 +1,4 @@
-from gnosis.boilerplate import supervised_epoch, eval_epoch
 from hydra.utils import instantiate
-from gnosis.utils.metrics import teacher_student_agreement
 
 
 def train_loop(config, student, train_closure, train_loader, train_kwargs,
