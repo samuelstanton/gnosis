@@ -69,7 +69,6 @@ trainer:
     eta_min: 1e-4
   distill_teacher: True
   synth_aug:
-    enabled: True
     ratio: 0.
 
 dataloader:

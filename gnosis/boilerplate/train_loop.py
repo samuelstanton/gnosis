@@ -1,45 +1,30 @@
-from gnosis.boilerplate import train_epoch, eval_epoch
+from gnosis.boilerplate import supervised_epoch, eval_epoch
 from hydra.utils import instantiate
 from gnosis.utils.metrics import teacher_student_agreement
 
 
-def train_loop(config, teacher, student, loss_fn, trainloader, testloader, tb_logger, tb_prefix=""):
+def train_loop(config, student, train_closure, train_loader, train_kwargs,
+               eval_closure, eval_loader, eval_kwargs, tb_logger, tb_prefix=""):
     optimizer = instantiate(config.trainer.optimizer, params=student.parameters())
     lr_scheduler = instantiate(config.trainer.lr_scheduler, optimizer=optimizer)
 
     records = []
     for epoch in range(config.trainer.num_epochs):
-        train_loss, train_acc = train_epoch(student, trainloader, optimizer, loss_fn, lr_scheduler, epoch)
-        metrics = dict(
-            epoch=epoch + 1,
-            train_loss=train_loss,
-            train_acc=train_acc,
-            lr=lr_scheduler.get_last_lr()[0]
-        )
+        train_metrics = train_closure(student, train_loader, optimizer,
+                                      lr_scheduler, epoch, **train_kwargs)
 
         if epoch % config.trainer.eval_period < (config.trainer.eval_period - 1):
             continue
 
-        test_loss, test_acc = eval_epoch(student, testloader, loss_fn)
-        train_ts_agree = train_acc
-        test_ts_agree = test_acc
-        if teacher is not None:
-            train_ts_agree = teacher_student_agreement(teacher, student, trainloader)
-            test_ts_agree = teacher_student_agreement(teacher, student, testloader)
-            print(f'teacher/student train agreement: {train_ts_agree:0.2f}%, '
-                  f'test agreement: {test_ts_agree:0.2f}%')
-        metrics.update(dict(
-            train_ts_agree=train_ts_agree,
-            test_loss=test_loss,
-            test_acc=test_acc,
-            test_ts_agree=test_ts_agree,
-        ))
-        records.append(metrics)
+        eval_metrics = eval_closure(student, eval_loader, **eval_kwargs)
+        train_metrics.update(eval_metrics)
+        records.append(train_metrics)
 
-        tb_logger.add_scalar("{}train/loss".format(tb_prefix), train_loss, epoch)
-        tb_logger.add_scalar("{}train/accuracy".format(tb_prefix), train_acc, epoch)
-        tb_logger.add_scalar("{}test/accuracy".format(tb_prefix), test_acc, epoch)
-        tb_logger.add_scalar("{}test/accuracy".format(tb_prefix), test_acc, epoch)
-        tb_logger.add_scalar("{}hypers/learning_rate".format(tb_prefix), lr_scheduler.get_last_lr()[0], epoch)
+        for key, val in train_metrics.items():
+            if key == epoch:
+                continue
+            tb_logger.add_scalar(f"{tb_prefix}train/{key}", val, epoch)
+        for key, val in eval_metrics.items():
+            tb_logger.add_scalar(f"{tb_prefix}eval/{key}", val, epoch)
 
     return student, records

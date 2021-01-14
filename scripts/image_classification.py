@@ -1,10 +1,11 @@
 import hydra
 from upcycle.cuda import try_cuda
 import random
+import math
 
 from gnosis import distillation, models
-from gnosis.boilerplate import train_loop, eval_epoch
-from gnosis.utils.data import get_loaders
+from gnosis.boilerplate import train_loop, eval_epoch, supervised_epoch, distillation_epoch
+from gnosis.utils.data import get_loaders, make_synth_teacher_data
 from gnosis.utils.checkpointing import load_teachers, load_generator
 from gnosis.utils.scripting import startup
 
@@ -16,28 +17,40 @@ def main(config):
     trainloader, testloader = get_loaders(config)
     tb_logger.add_text("hypers/transforms", config.augmentation.transforms_list, 0)
 
-    try:
-        teachers = load_teachers(config)
-        random.shuffle(teachers)
-    except FileNotFoundError:
-        teachers = []
-    if len(teachers) >= config.teacher.num_components and config.teacher.use_ckpts is True:
-        teachers = [try_cuda(teachers[i]) for i in range(config.teacher.num_components)]
+    if config.teacher.use_ckpts:
+        try:
+            teachers = load_teachers(config)
+            random.shuffle(teachers)
+        except FileNotFoundError:
+            teachers = []
+        if len(teachers) >= config.teacher.num_components:
+            teachers = [try_cuda(teachers[i]) for i in range(config.teacher.num_components)]
     else:
-        for i in range(config.teacher.num_components):
-            model = hydra.utils.instantiate(config.classifier)
-            model = try_cuda(model)
-            teacher_loss = distillation.ClassifierTeacherLoss(model)
-            print(f"==== training teacher model {i+1} ====")
+        teachers = []
+    num_ckpts = len(teachers)
 
-            tb_prefix = "teachers/teacher_{}/".format(i)
-            model, records = train_loop(config, None, model, teacher_loss, trainloader,
-                                        testloader, tb_logger, tb_prefix)
-            teachers.append(model)
+    for i in range(num_ckpts, config.teacher.num_components):
+        model = hydra.utils.instantiate(config.classifier)
+        model = try_cuda(model)
+        teacher_loss = distillation.ClassifierTeacherLoss(model)
+        print(f"==== training teacher model {i+1} ====")
+        model, records = train_loop(
+            config,
+            model,
+            train_closure=supervised_epoch,
+            train_loader=trainloader,
+            train_kwargs=dict(loss_fn=teacher_loss),
+            eval_closure=eval_epoch,
+            eval_loader=testloader,
+            eval_kwargs=dict(loss_fn=teacher_loss),
+            tb_logger=tb_logger,
+            tb_prefix="teachers/teacher_{}/".format(i)
+        )
+        teachers.append(model)
 
-            logger.add_table(f'teacher_{i}_train_metrics', records)
-            logger.write_csv()
-            logger.save_obj(model.state_dict(), f'teacher_{i}.ckpt')
+        logger.add_table(f'teacher_{i}_train_metrics', records)
+        logger.write_csv()
+        logger.save_obj(model.state_dict(), f'teacher_{i}.ckpt')
 
     if config.trainer.distill_teacher is False:
         return float('NaN')
@@ -50,17 +63,30 @@ def main(config):
     student = hydra.utils.instantiate(config.classifier)
     student = try_cuda(student)
 
-    generator = None
-    if config.trainer.synth_aug.enabled and config.trainer.synth_aug.ratio > 0:
+    synth_data = None
+    if config.trainer.synth_aug.ratio > 0:
         assert config.augmentation.normalization == 'unitcube'  # GANs use Tanh activations when sampling
         generator = load_generator(config)[0]
+        num_synth = math.ceil(len(trainloader.dataset) * config.trainer.synth_aug.ratio)
+        print(f'==== generating {num_synth} synthetic examples ====')
+        synth_data = make_synth_teacher_data(generator, teacher, num_synth,
+                                             batch_size=config.dataloader.batch_size)
     student_base_loss = hydra.utils.instantiate(config.loss.init)
-    student_loss = distillation.ClassifierStudentLoss(
-        teacher, student, student_base_loss, generator,
-        gen_ratio=config.trainer.synth_aug.ratio)
+    student_loss = distillation.ClassifierStudentLoss(student, student_base_loss, config.loss.alpha)
 
     print(f"==== distilling student classifier ====")
-    student, records = train_loop(config, teacher, student, student_loss, trainloader, testloader, tb_logger)
+    student, records = train_loop(
+        config,
+        student,
+        train_closure=distillation_epoch,
+        train_loader=trainloader,
+        train_kwargs=dict(loss_fn=student_loss, teacher=teacher, synth_data=synth_data, config=config),
+        eval_closure=eval_epoch,
+        eval_loader=testloader,
+        eval_kwargs=dict(loss_fn=student_loss, teacher=teacher),
+        tb_logger=tb_logger,
+        tb_prefix="student/"
+    )
     for r in records:
         r.update(dict(teacher_test_acc=teacher_test_acc, teacher_train_acc=teacher_train_acc))
     logger.add_table(f'student_train_metrics', records)

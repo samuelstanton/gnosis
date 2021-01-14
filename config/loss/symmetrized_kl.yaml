@@ -1,4 +1,5 @@
 # @package _group_
 name: sym_kl
+alpha: 0.9
 init:
   _target_: gnosis.distillation.SymmetrizedKLLoss

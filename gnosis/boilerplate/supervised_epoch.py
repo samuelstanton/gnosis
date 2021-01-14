@@ -6,7 +6,7 @@ def get_lr(lr_scheduler):
     return lr_scheduler.get_last_lr()[0]
 
 
-def train_epoch(net, loader, optimizer, loss_fn, lr_scheduler, epoch):
+def supervised_epoch(net, loader, optimizer, lr_scheduler, epoch, loss_fn):
     print('\nEpoch: %d' % epoch)
     net.train()
     train_loss = 0
@@ -34,6 +34,10 @@ def train_epoch(net, loader, optimizer, loss_fn, lr_scheduler, epoch):
         prog_bar.set_description(desc, refresh=True)
 
     lr_scheduler.step()
-    avg_loss = train_loss / (batch_idx + 1)
-    train_acc = 100 * correct / total
-    return avg_loss, train_acc
+    metrics = dict(
+            train_loss=train_loss / len(loader),
+            train_acc=100 * correct / total,
+            lr=lr_scheduler.get_last_lr()[0],
+            epoch=epoch
+        )
+    return metrics

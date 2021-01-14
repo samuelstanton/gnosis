@@ -17,35 +17,25 @@ class ClassifierTeacherLoss(object):
 
 
 class ClassifierStudentLoss(object):
-    def __init__(
-        self, teacher_model, student_model, base_loss, generator_model=None,
-        gen_ratio=0.
-    ):
-        self.teacher = teacher_model
+    def __init__(self, student_model, base_loss, alpha=0.9):
         self.student = student_model
-        self.generator = generator_model
-        self.gen_ratio = gen_ratio
         self.base_loss = base_loss
+        self.alpha = alpha
 
-    def __call__(self, inputs, targets):
-        batch_size = inputs.size(0)
-        if self.generator is not None and self.gen_ratio > 0:
-            num_generated = math.ceil(batch_size * self.gen_ratio)
-            self.generator.eval()
-            with torch.no_grad():
-                synth_inputs = self.generator.sample(num_generated)
-            inputs = torch.cat([inputs, synth_inputs], dim=0)
-
-        with torch.no_grad():
-            teacher_logp = self.teacher(inputs).log_softmax(dim=-1)
-
+    def __call__(self, inputs, targets, teacher_logits):
         student_logits = self.student(inputs)
         student_logp = student_logits.log_softmax(dim=-1)
-        hard_loss = F.cross_entropy(student_logits[:batch_size], targets)
-        soft_loss = self.base_loss(teacher_logp, student_logp)
-        loss = hard_loss + soft_loss
+        hard_loss = F.cross_entropy(student_logits, targets)
+        soft_loss = self.base_loss(teacher_logits, student_logp)
+        loss = self.alpha * hard_loss + (1 - self.alpha) * soft_loss
+        return loss, student_logits
 
-        return loss, student_logits[:batch_size]
+
+def reduce_teacher_logits(teacher_logits):
+    assert teacher_logits.dim() == 3
+    teacher_logits = F.log_softmax(teacher_logits, dim=-1)
+    n_teachers = len(teacher_logits)
+    return torch.logsumexp(teacher_logits, dim=1) - math.log(n_teachers)
 
 
 class BaseClassificationDistillationLoss(ABC):
@@ -74,9 +64,7 @@ class BaseClassificationDistillationLoss(ABC):
     @staticmethod
     def _reduce_teacher_predictions(teacher_logits):
         if len(teacher_logits.shape) == 3:
-            teacher_logits = F.log_softmax(teacher_logits, dim=-1)
-            n_teachers = len(teacher_logits)
-            return torch.logsumexp(teacher_logits, dim=0) - math.log(n_teachers)
+            return reduce_teacher_logits(teacher_logits)
         return teacher_logits
 
     @staticmethod
