@@ -45,5 +45,6 @@ RUN python -m pip install -r gnosis/requirements.txt
 RUN python -m pip install -e gnosis/
 RUN python -m pip install -e hydra/
 RUN python -m pip install -e hydra/plugins/hydra_ray_launcher/
+RUN python -m pip install -e hydra/plugins/hydra_ax_sweeper/
 
 WORKDIR /home/sam/Code/remote/gnosis

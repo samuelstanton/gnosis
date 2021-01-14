@@ -1,11 +1,17 @@
 # @package hydra.launcher
 _target_: hydra_plugins.hydra_ray_launcher.ray_aws_launcher.RayAWSLauncher
 env_setup:
-  pip_packages: {}
+  pip_packages:
+    omegaconf: null
+    hydra_core: null
+    ray: null
+    cloudpickle: null
+    pickle5: null
+    hydra_ray_launcher: null
   commands: []
 ray:
-  init:
-    address:
+#  init:
+#    address:
   remote:
     num_gpus: 0.25
   cluster:
@@ -40,27 +46,25 @@ ray:
         Arn: arn:aws:iam::312649332277:instance-profile/ray-worker-v1
       InstanceType: p2.xlarge
       ImageId: ami-08e16447bd5caf26a
-    file_mounts: {}
-    initialization_commands: []
-    setup_commands: []
-    head_setup_commands: []
-    worker_setup_commands: []
-    head_start_ray_commands:
-      - ray stop
-      - ulimit -n 65536
-      - ray start --head --port=6379 --object-manager-port=8076 --autoscaling-config=~/ray_bootstrap_config.yaml
-    worker_start_ray_commands:
-      - ray stop
-      - ulimit -n 65536
-      - ray start --address=$RAY_HEAD_IP:6379 --object-manager-port=8076
+#    file_mounts: {}
+#    initialization_commands: []
+#    setup_commands: []
+#    head_setup_commands: []
+#    worker_setup_commands: []
+#    head_start_ray_commands:
+#      - ray stop
+#      - ulimit -n 65536; ray start --head --port=6379 --object-manager-port=8076 --autoscaling-config=~/ray_bootstrap_config.yaml
+#    worker_start_ray_commands:
+#      - ray stop
+#      - ulimit -n 65536; ray start --address=$RAY_HEAD_IP:6379 --object-manager-port=8076
 stop_cluster: true
-sync_up:
-  source_dir: null
-  target_dir: null
-  include: []
-  exclude: []
-sync_down:
-  source_dir: null
-  target_dir: null
-  include: []
-  exclude: []
+#sync_up:
+#  source_dir: null
+#  target_dir: null
+#  include: []
+#  exclude: []
+#sync_down:
+#  source_dir: null
+#  target_dir: null
+#  include: []
+#  exclude: []

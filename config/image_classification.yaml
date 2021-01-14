@@ -4,7 +4,8 @@ defaults:
   - density_model: sngan
   - logger: local
   - loss: teacher_student_kl
-  - hydra/launcher: basic
+  - override hydra/sweeper: basic
+  - override hydra/launcher: basic
 
 augmentation:
   random_apply:
@@ -86,10 +87,6 @@ project_dir: /home/sam/Code/remote/gnosis
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 exp_name:
-#         "ax_sweep/${trainer.optimizer.lr}_${trainer.lr_scheduler.eta_min}_\
-#          ${trainer.optimizer.momentum}_${trainer.synth_aug.ratio}_\
-#          ${trainer.optimizer.nesterov}_${dataloader.batch_size}"
-
         "synth_aug_${trainer.synth_aug.ratio}_${dataset.name}_${loss.name}_${version}/\
          preresnet${teacher.depth}_${teacher.num_components}-preresnet${classifier.depth}_1"
 
