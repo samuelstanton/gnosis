@@ -4,8 +4,8 @@ defaults:
   - density_model: sngan
   - logger: local
   - loss: teacher_student_kl
-  - override hydra/sweeper: basic
-  - override hydra/launcher: basic
+  - hydra/sweeper: basic
+  - hydra/launcher: basic
 
 augmentation:
   random_apply:
