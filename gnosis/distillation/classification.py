@@ -31,7 +31,7 @@ class ClassifierStudentLoss(object):
         return loss, student_logits
 
 
-def reduce_teacher_logits(teacher_logits):
+def reduce_ensemble_logits(teacher_logits):
     assert teacher_logits.dim() == 3
     teacher_logits = F.log_softmax(teacher_logits, dim=-1)
     n_teachers = len(teacher_logits)
@@ -64,7 +64,7 @@ class BaseClassificationDistillationLoss(ABC):
     @staticmethod
     def _reduce_teacher_predictions(teacher_logits):
         if len(teacher_logits.shape) == 3:
-            return reduce_teacher_logits(teacher_logits)
+            return reduce_ensemble_logits(teacher_logits)
         return teacher_logits
 
     @staticmethod

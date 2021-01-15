@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from gnosis.distillation.classification import reduce_ensemble_logits
 
 
 class ClassifierEnsemble(torch.nn.Module):
@@ -8,7 +9,8 @@ class ClassifierEnsemble(torch.nn.Module):
         self.components = torch.nn.ModuleList(models)
 
     def forward(self, inputs):
-        return torch.stack([model(inputs) for model in self.components])
+        """[batch_size x num_components x ...]"""
+        return torch.stack([model(inputs) for model in self.components], dim=1)
 
 
 class ClassifierEnsembleLoss(object):
@@ -17,5 +19,5 @@ class ClassifierEnsembleLoss(object):
 
     def __call__(self, inputs, targets):
         logits = self.ensemble(inputs)
-        log_p = logits.softmax(dim=-1).mean(0).log()
-        return F.nll_loss(log_p, targets), log_p
+        logits = reduce_ensemble_logits(logits)
+        return F.nll_loss(logits, targets), logits

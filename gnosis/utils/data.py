@@ -4,7 +4,9 @@ import torchvision
 import torch
 import math
 from upcycle import cuda
-from gnosis.distillation.classification import reduce_teacher_logits
+from gnosis.distillation.classification import reduce_ensemble_logits
+import copy
+from torch.utils.data import TensorDataset, DataLoader
 
 
 def get_loaders(config):
@@ -73,7 +75,8 @@ def make_real_teacher_data(train_dataset, teacher, batch_size):
     for input_batch, target_batch in train_loader:
         input_batch = cuda.try_cuda(input_batch)
         with torch.no_grad():
-            batch_logits = teacher(input_batch).transpose(1, 0)  # [batch_size, num_teachers, ... ]
+            batch_logits = teacher(input_batch)  # [batch_size, num_teachers, ... ]
+            batch_logits = reduce_ensemble_logits(batch_logits)
         inputs.append(input_batch.cpu())
         targets.append(target_batch.cpu())
         teacher_logits.append(batch_logits.cpu())
@@ -94,9 +97,9 @@ def make_synth_teacher_data(generator, teacher, dataset_size, batch_size):
     for _ in range(num_rounds):
         with torch.no_grad():
             input_batch = generator.sample(batch_size)
-            logit_batch = teacher(input_batch).transpose(1, 0)
-        reduced_logits = reduce_teacher_logits(logit_batch)
-        label_batch = reduced_logits.argmax(dim=-1)
+            logit_batch = teacher(input_batch)
+            logit_batch = reduce_ensemble_logits(logit_batch)
+        label_batch = logit_batch.argmax(dim=-1)
 
         synth_inputs.append(input_batch.cpu())
         teacher_logits.append(logit_batch.cpu())
@@ -112,9 +115,49 @@ def get_distill_loader(config, teacher, train_dataset, synth_data):
     real_data = make_real_teacher_data(train_dataset, teacher, batch_size=config.dataloader.batch_size)
     if synth_data is not None:
         full_data = [torch.cat([r, s], dim=0) for r, s in zip(real_data, synth_data)]
-        full_dataset = torch.utils.data.TensorDataset(*full_data)
+        full_dataset = TensorDataset(*full_data)
     else:
-        full_dataset = torch.utils.data.TensorDataset(*real_data)
-    dataloader = torch.utils.data.DataLoader(full_dataset, batch_size=config.dataloader.batch_size,
+        full_dataset = TensorDataset(*real_data)
+    dataloader = DataLoader(full_dataset, batch_size=config.dataloader.batch_size,
                                              shuffle=True)
     return dataloader
+
+
+def get_logits(model, data_loader):
+    model.eval()
+    logits = []
+    for minibatch in data_loader:
+        input_batch = cuda.try_cuda(minibatch[0])
+        with torch.no_grad():
+            logit_batch = model(input_batch)
+            if logit_batch.dim() == 3:
+                logit_batch = reduce_ensemble_logits(logit_batch)
+            logits.append(logit_batch.cpu())
+    return torch.cat(logits, dim=0)
+
+
+def save_logits(config, student, teacher, synth_data, logger):
+    print('==== saving logits ====')
+    config = copy.deepcopy(config)
+    config.augmentation.transforms_list = None  # no data augmentation for evaluation
+    config.dataloader.shuffle = False
+    train_loader, test_loader = get_loaders(config)
+
+    student_train = get_logits(student, train_loader)
+    logger.save_obj(student_train, 'student_train_logits.pkl')
+    teacher_train = get_logits(teacher, train_loader)
+    logger.save_obj(teacher_train, 'teacher_train_logits.pkl')
+    del student_train, teacher_train, train_loader
+
+    student_test = get_logits(student, test_loader)
+    logger.save_obj(student_test, 'student_test_logits.pkl')
+    teacher_test = get_logits(teacher, test_loader)
+    logger.save_obj(teacher_test, 'teacher_test_logits.pkl')
+    del student_test, teacher_test, test_loader
+
+    synth_loader = DataLoader(TensorDataset(*synth_data), shuffle=False,
+                              batch_size=config.dataloader.batch_size)
+    student_synth = get_logits(student, synth_loader)
+    logger.save_obj(student_synth, 'student_synth_logits.pkl')
+    teacher_synth = get_logits(teacher, synth_loader)
+    logger.save_obj(teacher_synth, 'teacher_synth_logits.pkl')

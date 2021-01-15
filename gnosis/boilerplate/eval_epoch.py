@@ -1,7 +1,7 @@
 import torch
 from tqdm import tqdm
 from upcycle.cuda import try_cuda
-from gnosis.distillation.classification import reduce_teacher_logits
+from gnosis.distillation.classification import reduce_ensemble_logits
 
 
 def eval_epoch(net, loader, loss_fn, teacher=None):
@@ -19,7 +19,8 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
             inputs, targets = try_cuda(inputs, targets)
             loss_args = [inputs, targets]
             if teacher is not None:
-                teacher_logits = teacher(inputs).transpose(1, 0)
+                teacher_logits = teacher(inputs)
+                teacher_logits = reduce_ensemble_logits(teacher_logits)
                 loss_args.append(teacher_logits)
             loss, logits = loss_fn(*loss_args)
 
@@ -28,7 +29,7 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
             if teacher is not None:
-                teacher_predicted = reduce_teacher_logits(teacher_logits).argmax(-1)
+                teacher_predicted = teacher_logits.argmax(-1)
                 agree += predicted.eq(teacher_predicted).sum().item()
 
             desc = ('[eval] Loss: %.3f | Acc: %.3f%% (%d/%d)'

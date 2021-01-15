@@ -1,7 +1,6 @@
 from tqdm import tqdm
 from upcycle.cuda import try_cuda
 from gnosis.utils.data import get_distill_loader
-from gnosis.distillation.classification import reduce_teacher_logits
 import torch
 
 
@@ -18,16 +17,16 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, lo
     with torch.no_grad():
         distill_loader = get_distill_loader(config, teacher, train_loader.dataset, synth_data)
     prog_bar = tqdm(enumerate(distill_loader), total=len(distill_loader), desc=desc, leave=True)
-    for batch_idx, (inputs, targets, logits) in prog_bar:
-        inputs, targets, logits = try_cuda(inputs, targets, logits)
+    for batch_idx, (inputs, targets, teacher_logits) in prog_bar:
+        inputs, targets, teacher_logits = try_cuda(inputs, targets, teacher_logits)
         optimizer.zero_grad()
-        loss, student_logits = loss_fn(inputs, targets, logits)
+        loss, student_logits = loss_fn(inputs, targets, teacher_logits)
         loss.backward()
         optimizer.step()
 
         train_loss += loss.item()
         student_predicted = student_logits.argmax(-1)
-        teacher_predicted = reduce_teacher_logits(logits).argmax(-1)
+        teacher_predicted = teacher_logits.argmax(-1)
         total += inputs.size(0)
         correct += student_predicted.eq(targets).sum().item()
         agree += student_predicted.eq(teacher_predicted).sum().item()
