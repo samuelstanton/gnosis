@@ -5,7 +5,7 @@ import math
 
 from gnosis import distillation, models
 from gnosis.boilerplate import train_loop, eval_epoch, supervised_epoch, distillation_epoch
-from gnosis.utils.data import get_loaders, make_synth_teacher_data, save_logits
+from gnosis.utils.data import get_loaders, make_synth_teacher_data, save_logits, get_distill_loaders
 from gnosis.utils.checkpointing import load_teachers, load_generator
 from gnosis.utils.scripting import startup
 
@@ -72,6 +72,7 @@ def main(config):
         synth_data = make_synth_teacher_data(generator, teacher, num_synth,
                                              batch_size=config.dataloader.batch_size)
         del generator  # free up memory
+    train_loader, synth_loader = get_distill_loaders(config, train_loader, synth_data)
     student_base_loss = hydra.utils.instantiate(config.loss.init)
     student_loss = distillation.ClassifierStudentLoss(student, student_base_loss, config.loss.alpha)
 
@@ -81,7 +82,7 @@ def main(config):
         student,
         train_closure=distillation_epoch,
         train_loader=train_loader,
-        train_kwargs=dict(loss_fn=student_loss, teacher=teacher, synth_data=synth_data, config=config),
+        train_kwargs=dict(loss_fn=student_loss, teacher=teacher, synth_loader=synth_loader),
         eval_closure=eval_epoch,
         eval_loader=test_loader,
         eval_kwargs=dict(loss_fn=student_loss, teacher=teacher),

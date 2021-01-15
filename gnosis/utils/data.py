@@ -111,16 +111,17 @@ def make_synth_teacher_data(generator, teacher, dataset_size, batch_size):
     return synth_inputs, synth_targets, synth_logits
 
 
-def get_distill_loader(config, teacher, train_dataset, synth_data):
-    real_data = make_real_teacher_data(train_dataset, teacher, batch_size=config.dataloader.batch_size)
-    if synth_data is not None:
-        full_data = [torch.cat([r, s], dim=0) for r, s in zip(real_data, synth_data)]
-        full_dataset = TensorDataset(*full_data)
-    else:
-        full_dataset = TensorDataset(*real_data)
-    dataloader = DataLoader(full_dataset, batch_size=config.dataloader.batch_size,
-                                             shuffle=True)
-    return dataloader
+def get_distill_loaders(config, train_loader, synth_data):
+    num_real = len(train_loader.dataset)
+    num_synth = 0 if synth_data is None else synth_data[0].size(0)
+    real_ratio = num_real / (num_real + num_synth)
+    real_batch_size = math.ceil(real_ratio * config.dataloader.batch_size)
+    synth_batch_size = config.dataloader.batch_size - real_batch_size
+    train_loader = DataLoader(train_loader.dataset, shuffle=True, batch_size=real_batch_size)
+    if num_synth == 0:
+        return train_loader, None
+    synth_loader = DataLoader(TensorDataset(*synth_data), shuffle=True, batch_size=synth_batch_size)
+    return train_loader, synth_loader
 
 
 def get_logits(model, data_loader):
@@ -155,6 +156,8 @@ def save_logits(config, student, teacher, synth_data, logger):
     logger.save_obj(teacher_test, 'teacher_test_logits.pkl')
     del student_test, teacher_test, test_loader
 
+    if synth_data is None:
+        return None
     synth_loader = DataLoader(TensorDataset(*synth_data), shuffle=False,
                               batch_size=config.dataloader.batch_size)
     student_synth = get_logits(student, synth_loader)
