@@ -3,9 +3,9 @@ defaults:
   - classifier: preresnet
   - density_model: sngan
   - logger: local
-  - loss: teacher_student_kl
-  - hydra/sweeper: basic
-  - hydra/launcher: basic
+  - loss: ts_soft_cross_ent
+  - override hydra/sweeper: basic
+  - override hydra/launcher: basic
 
 augmentation:
   random_apply:

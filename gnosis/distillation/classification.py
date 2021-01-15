@@ -137,7 +137,7 @@ class AveragedSymmetrizedKLLoss(BaseClassificationDistillationLoss):
         return kl + reversed_kl
 
 
-class TeacherStudentCrossEntLoss(BaseClassificationDistillationLoss):
+class TeacherStudentHardCrossEntLoss(BaseClassificationDistillationLoss):
     """
     Standard cross-entropy loss w.r.t. the hard teacher labels
     """
@@ -156,4 +156,21 @@ class TeacherStudentCrossEntLoss(BaseClassificationDistillationLoss):
             teacher_labels[corrupt_idxs] = rand_labels
 
         loss = F.cross_entropy(student_logits, teacher_labels)
+        return loss
+
+
+class TeacherStudentSoftCrossEntLoss(object):
+    """Soft teacher/student cross entropy loss from [Hinton et al (2015)]
+        (https://arxiv.org/abs/1503.02531)
+    """
+    def __init__(self, temp, **kwargs):
+        super().__init__()
+        self.temp = temp
+
+    def __call__(self, teacher_logits, student_logits):
+        if teacher_logits.dim() == 3:
+            teacher_logits = reduce_ensemble_logits(teacher_logits)
+        teacher_probs = F.softmax(teacher_logits / self.temp, dim=-1)
+        student_logits = F.log_softmax(student_logits / self.temp, dim=-1)
+        loss = -self.temp ** 2 * (teacher_probs * student_logits).mean()
         return loss
