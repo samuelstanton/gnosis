@@ -50,9 +50,10 @@ teacher:
   depth: ${classifier.depth}
   num_components: 1
   use_ckpts: True
+  shuffle_ckpts: False
   ckpt_dir:
             "data/experiments/image_classification/classifier_checkpoints/\
-            ${classifier.name}${classifier.depth}_${dataset.name}_${augmentation.normalization}"
+            ${classifier.name}${teacher.depth}_${dataset.name}_${augmentation.normalization}"
 
 trainer:
   num_epochs: 200

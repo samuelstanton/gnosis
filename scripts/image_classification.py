@@ -20,15 +20,21 @@ def main(config):
     if config.teacher.use_ckpts:
         try:
             teachers = load_teachers(config)
-            random.shuffle(teachers)
+            if config.teacher.shuffle_ckpts:
+                print('shuffling checkpoints')
+                random.shuffle(teachers)
         except FileNotFoundError:
             teachers = []
         if len(teachers) >= config.teacher.num_components:
-            teachers = [try_cuda(teachers[i]) for i in range(config.teacher.num_components)]
+            # use trial_id to determine which checkpoints are used
+            start_idx = (config.trial_id * config.teacher.num_components) % len(teachers) - len(teachers)
+            stop_idx = start_idx + config.teacher.num_components
+            print(f'using checkpoints {[(len(teachers) + i) % len(teachers) for i in range(start_idx, stop_idx)]}')
+            teachers = [try_cuda(teachers[i]) for i in range(start_idx, stop_idx)]
     else:
         teachers = []
     num_ckpts = len(teachers)
-
+    # if there weren't enough checkpoints, train the remaining components
     for i in range(num_ckpts, config.teacher.num_components):
         model = hydra.utils.instantiate(config.classifier)
         model = try_cuda(model)
