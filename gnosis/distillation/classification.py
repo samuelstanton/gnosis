@@ -24,9 +24,8 @@ class ClassifierStudentLoss(object):
 
     def __call__(self, inputs, targets, teacher_logits):
         student_logits = self.student(inputs)
-        student_logp = student_logits.log_softmax(dim=-1)
         hard_loss = F.cross_entropy(student_logits, targets)
-        soft_loss = self.base_loss(teacher_logits, student_logp)
+        soft_loss = self.base_loss(teacher_logits, student_logits)
         loss = self.alpha * hard_loss + (1 - self.alpha) * soft_loss
         return loss, student_logits
 
@@ -171,6 +170,6 @@ class TeacherStudentSoftCrossEntLoss(object):
         if teacher_logits.dim() == 3:
             teacher_logits = reduce_ensemble_logits(teacher_logits)
         teacher_probs = F.softmax(teacher_logits / self.temp, dim=-1)
-        student_logits = F.log_softmax(student_logits / self.temp, dim=-1)
-        loss = -self.temp ** 2 * (teacher_probs * student_logits).mean()
+        student_logp = F.log_softmax(student_logits / self.temp, dim=-1)
+        loss = -(self.temp ** 2) * (teacher_probs * student_logp).mean()
         return loss

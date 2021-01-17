@@ -1,6 +1,6 @@
 # @package _group_
 name: ts_soft_cross_ent
-alpha: 0.9
+alpha: 0.5
 init:
   _target_: gnosis.distillation.TeacherStudentSoftCrossEntLoss
-  temp: 4.
+  temp: 1.

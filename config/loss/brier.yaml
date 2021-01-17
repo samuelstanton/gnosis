@@ -1,5 +1,5 @@
 # @package _group_
 name: brier
-alpha: 0.9
+alpha: 0.5
 init:
   _target_: gnosis.distillation.BrierLoss
