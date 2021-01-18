@@ -11,11 +11,11 @@ class TestClassificationDistillationLoss(unittest.TestCase):
 
     @staticmethod
     def _generate_logits_probs(n_teachers=5, n_data=100, n_classes=10):
-        teacher_logits = torch.randn(n_teachers, n_data, n_classes)
+        teacher_logits = torch.randn(n_data, n_teachers, n_classes)
         student_logits = torch.randn(n_data, n_classes)
         teacher_probs = F.softmax(teacher_logits, dim=-1)
         student_probs = F.softmax(student_logits, dim=-1)
-        teacher_ens_probs = teacher_probs.mean(dim=0)
+        teacher_ens_probs = teacher_probs.mean(dim=1)
         return teacher_logits, teacher_ens_probs, student_logits, student_probs
 
     def test_loss_raises_shape_error(self):

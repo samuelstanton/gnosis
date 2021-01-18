@@ -81,7 +81,7 @@ dataloader:
 seed:
 trial_id: 0
 project_name: gnosis
-version: v0.0.8
+version: v0.0.10
 
 # Directories for loading and storing data
 project_dir: /home/sam/Code/remote/gnosis

@@ -171,5 +171,5 @@ class TeacherStudentSoftCrossEntLoss(object):
             teacher_logits = reduce_ensemble_logits(teacher_logits)
         teacher_probs = F.softmax(teacher_logits / self.temp, dim=-1)
         student_logp = F.log_softmax(student_logits / self.temp, dim=-1)
-        loss = -(self.temp ** 2) * (teacher_probs * student_logp).mean()
+        loss = -(self.temp ** 2) * (teacher_probs * student_logp).sum(-1).mean()
         return loss
