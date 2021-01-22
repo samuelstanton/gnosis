@@ -1,4 +1,6 @@
-ray==1.0.1
+omegaconf==2.1.0dev13
+ray==1.1.0
+boto3==1.16.48
 cloudpickle==1.6.0
 pickle5==0.0.11
 torch>=1.7
