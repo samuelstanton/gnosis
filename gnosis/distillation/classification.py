@@ -23,8 +23,9 @@ class ClassifierStudentLoss(object):
         self.alpha = alpha
 
     def __call__(self, inputs, targets, teacher_logits):
+        real_batch_size = targets.size(0)
         student_logits = self.student(inputs)
-        hard_loss = F.cross_entropy(student_logits, targets)
+        hard_loss = F.cross_entropy(student_logits[:real_batch_size], targets)
         soft_loss = self.base_loss(teacher_logits, student_logits)
         loss = self.alpha * hard_loss + (1 - self.alpha) * soft_loss
         return loss, student_logits

@@ -53,9 +53,9 @@ def main(config):
             tb_prefix="teachers/teacher_{}/".format(i)
         )
         teachers.append(model)
-
         logger.add_table(f'teacher_{i}_train_metrics', records)
         logger.write_csv()
+    for i, model in enumerate(teachers):
         logger.save_obj(model.state_dict(), f'teacher_{i}.ckpt')
 
     if config.trainer.distill_teacher is False:
