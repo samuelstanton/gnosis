@@ -7,11 +7,15 @@ from upcycle import cuda
 from gnosis.distillation.classification import reduce_ensemble_logits
 import copy
 from torch.utils.data import TensorDataset, DataLoader
+import random
 
 
 def get_loaders(config):
     train_transform, test_transform = get_augmentation(config)
     train_dataset = hydra.utils.instantiate(config.dataset.init, train=True, transform=train_transform)
+    if config.dataset.shuffle_train_targets.enabled:
+        random.seed(config.dataset.shuffle_train_targets.seed)
+        random.shuffle(train_dataset.targets)
     test_dataset = hydra.utils.instantiate(config.dataset.init, train=False, transform=test_transform)
 
     subsample_ratio = config.dataset.subsample_ratio

@@ -88,7 +88,7 @@ project_dir: cwd
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 exp_name:
-        "synth_aug_${trainer.synth_aug.ratio}_${dataset.name}_${loss.name}_alpha_{loss.alpha}_${version}/\
+        "synth_aug_${trainer.synth_aug.ratio}_${dataset.name}_${loss.name}_alpha_${loss.alpha}_${version}/\
          preresnet${teacher.depth}_${teacher.num_components}-preresnet${classifier.depth}_1"
 
 # Checkpointing
