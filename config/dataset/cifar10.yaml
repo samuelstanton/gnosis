@@ -9,7 +9,7 @@ num_classes: 10
 input_size: 32
 shuffle_train_targets:
   enabled: False
-  seed: ${trial_id}
+  seed: 0
 subsample_ratio: 1.0
 statistics:
   mean_statistics:

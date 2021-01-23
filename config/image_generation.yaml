@@ -27,7 +27,8 @@ dataloader:
   num_workers: 2
 
 augmentation:
-  transforms_list: horizontal_flip
+  transforms_list:
+    - horizontal_flip
   normalization: unitcube
   crop:
     _target_: torchvision.transforms.RandomCrop

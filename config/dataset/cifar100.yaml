@@ -9,7 +9,7 @@ num_classes: 100
 input_size: 32
 shuffle_train_targets:
   enabled: False
-  seed: ${trial_id}
+  seed: 0
 subsample_ratio: 1.0
 # https://gist.github.com/weiaicunzai/e623931921efefd4c331622c344d8151
 statistics:

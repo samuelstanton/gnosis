@@ -41,7 +41,7 @@ def get_augmentation(config):
     assert 'augmentation' in config.keys()
     if config.augmentation.transforms_list is not None:
         transforms_list = [hydra.utils.instantiate(config.augmentation[name])
-                           for name in config.augmentation["transforms_list"].split(",")]
+                           for name in config.augmentation["transforms_list"]]
         if 'random_apply' in config.augmentation.keys() and config.augmentation.random_apply.p < 1:
             transforms_list = [
                 hydra.utils.instantiate(config.augmentation.random_apply, transforms=transforms_list)]

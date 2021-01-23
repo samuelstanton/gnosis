@@ -43,7 +43,9 @@ augmentation:
     sigma:
       - 0.1
       - 2.0
-  transforms_list: crop,horizontal_flip
+  transforms_list:
+    - crop
+    - horizontal_flip
   normalization: unitcube
 
 teacher:

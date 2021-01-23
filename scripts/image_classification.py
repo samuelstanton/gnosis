@@ -15,7 +15,7 @@ def main(config):
     # construct logger, model, dataloaders
     config, logger, tb_logger = startup(config)
     train_loader, test_loader = get_loaders(config)
-    tb_logger.add_text("hypers/transforms", config.augmentation.transforms_list, 0)
+    tb_logger.add_text("hypers/transforms", ''.join(config.augmentation.transforms_list), 0)
 
     if config.teacher.use_ckpts:
         try:
