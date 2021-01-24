@@ -7,11 +7,15 @@ from upcycle import cuda
 from gnosis.distillation.classification import reduce_ensemble_logits
 import copy
 from torch.utils.data import TensorDataset, DataLoader
+import random
 
 
 def get_loaders(config):
     train_transform, test_transform = get_augmentation(config)
     train_dataset = hydra.utils.instantiate(config.dataset.init, train=True, transform=train_transform)
+    if config.dataset.shuffle_train_targets.enabled:
+        random.seed(config.dataset.shuffle_train_targets.seed)
+        random.shuffle(train_dataset.targets)
     test_dataset = hydra.utils.instantiate(config.dataset.init, train=False, transform=test_transform)
 
     subsample_ratio = config.dataset.subsample_ratio
@@ -37,7 +41,7 @@ def get_augmentation(config):
     assert 'augmentation' in config.keys()
     if config.augmentation.transforms_list is not None:
         transforms_list = [hydra.utils.instantiate(config.augmentation[name])
-                           for name in config.augmentation["transforms_list"].split(",")]
+                           for name in config.augmentation["transforms_list"]]
         if 'random_apply' in config.augmentation.keys() and config.augmentation.random_apply.p < 1:
             transforms_list = [
                 hydra.utils.instantiate(config.augmentation.random_apply, transforms=transforms_list)]
