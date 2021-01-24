@@ -39,12 +39,12 @@ ray:
     head_node:
       IamInstanceProfile:
         Arn: arn:aws:iam::312649332277:instance-profile/ray-head-v1
-      InstanceType: p2.8xlarge
+      InstanceType: p3.8xlarge
       ImageId: ami-08e16447bd5caf26a
     worker_nodes:
       IamInstanceProfile:
         Arn: arn:aws:iam::312649332277:instance-profile/ray-worker-v1
-      InstanceType: p2.xlarge
+      InstanceType: p3.xlarge
       ImageId: ami-08e16447bd5caf26a
     file_mounts: {}
     initialization_commands: []

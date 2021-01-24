@@ -11,7 +11,7 @@ RUN apt update && apt install software-properties-common -y
 RUN apt-get install python3.8-dev -y
 # install python 3.8 virtual environment
 RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt update && apt install python3.8-venv -y
+RUN apt update && apt install python3.8-venv vim git -y
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3.8 -m venv $VIRTUAL_ENV
 ENV PATH=$VIRTUAL_ENV/bin:$PATH
