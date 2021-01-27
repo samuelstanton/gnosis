@@ -1,12 +1,13 @@
 # @package _group_
 init:
-  _target_: gnosis.datasets.CIFAR102
-  root: /datasets/cifar10_2
+  _target_: gnosis.datasets.make_cifar100_svhn
+  root: /datasets/cifar100_svhn
   download: True
-  cifar10_fraction: 1.
+  num_svhn_data: 10000
+  seed: 0
 
-name: cifar102
-num_classes: 10
+name: cifar100_svhn
+num_classes: 100
 input_size: 32
 subsample_ratio: 1.0
 statistics:
