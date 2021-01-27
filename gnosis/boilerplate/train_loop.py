@@ -9,7 +9,7 @@ def train_loop(config, student, train_closure, train_loader, train_kwargs,
     records = []
     for epoch in range(config.trainer.num_epochs):
         train_metrics = train_closure(student, train_loader, optimizer,
-                                      lr_scheduler, epoch, **train_kwargs)
+                                      lr_scheduler, epoch, config.mixup.alpha, **train_kwargs)
 
         if epoch % config.trainer.eval_period < (config.trainer.eval_period - 1):
             continue

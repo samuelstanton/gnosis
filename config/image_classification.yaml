@@ -4,8 +4,8 @@ defaults:
   - density_model: sngan
   - logger: local
   - loss: ts_soft_cross_ent
-  - override hydra/sweeper: basic
-  - override hydra/launcher: basic
+#  - override hydra/sweeper: basic
+#  - override hydra/launcher: basic
 
 augmentation:
   random_apply:
@@ -47,6 +47,9 @@ augmentation:
     - crop
     - horizontal_flip
   normalization: unitcube
+
+mixup:
+  alpha: 0.  # if alpha > 0, the mixup training is active
 
 teacher:
   depth: ${classifier.depth}

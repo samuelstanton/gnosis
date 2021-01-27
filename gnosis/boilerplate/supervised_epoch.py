@@ -6,7 +6,9 @@ def get_lr(lr_scheduler):
     return lr_scheduler.get_last_lr()[0]
 
 
-def supervised_epoch(net, loader, optimizer, lr_scheduler, epoch, loss_fn):
+def supervised_epoch(net, loader, optimizer, lr_scheduler, epoch, mixup_alpha, loss_fn):
+    if mixup_alpha > 0:
+        raise NotImplementedError('Mixup is not implemented for training teachers.')
     print('\nEpoch: %d' % epoch)
     net.train()
     train_loss = 0

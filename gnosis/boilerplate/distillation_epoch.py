@@ -1,3 +1,4 @@
+import numpy as np
 from tqdm import tqdm
 from upcycle.cuda import try_cuda
 import torch
@@ -9,10 +10,20 @@ def get_lr(lr_scheduler):
     return lr_scheduler.get_last_lr()[0]
 
 
-def make_generator(teacher, train_loader, synth_loader):
+def mixup_data(x, alpha):
+    lam = np.random.beta(alpha, alpha)
+    batch_size = x.size()[0]
+    index = try_cuda(torch.randperm(batch_size))
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    return mixed_x
+
+
+def make_generator(teacher, train_loader, synth_loader, mixup_alpha):
     if synth_loader is None:
         for input_batch, target_batch in train_loader:
             input_batch, target_batch = try_cuda(input_batch, target_batch)
+            if mixup_alpha > 0:
+                input_batch = mixup_data(input_batch, mixup_alpha)
             with torch.no_grad():
                 logit_batch = teacher(input_batch)
                 logit_batch = reduce_ensemble_logits(logit_batch)
@@ -30,7 +41,7 @@ def make_generator(teacher, train_loader, synth_loader):
             yield input_batch, target_batch, logit_batch
 
 
-def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, loss_fn,
+def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha, loss_fn,
                        teacher, synth_loader):
     student.train()
     train_loss, correct, agree, total, real_total = 0, 0, 0, 0, 0
@@ -38,7 +49,9 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, lo
     desc = ('[student] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
             (epoch, get_lr(lr_scheduler), 0, 0, correct, total))
     num_batches = len(train_loader) if synth_loader is None else min(len(train_loader), len(synth_loader))
-    batch_generator = make_generator(teacher, train_loader, synth_loader)
+    if mixup_alpha > 0 and loss_fn.alpha > 0:
+        raise NotImplementedError('Mixup not implemented for hard label distillation loss.')
+    batch_generator = make_generator(teacher, train_loader, synth_loader, mixup_alpha)
     prog_bar = tqdm(enumerate(batch_generator), total=num_batches, desc=desc, leave=True)
     for batch_idx, (inputs, targets, teacher_logits) in prog_bar:
         inputs, targets, teacher_logits = try_cuda(inputs, targets, teacher_logits)
