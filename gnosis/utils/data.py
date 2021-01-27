@@ -18,10 +18,14 @@ def get_loaders(config):
         random.shuffle(train_dataset.targets)
     test_dataset = hydra.utils.instantiate(config.dataset.init, train=False, transform=test_transform)
 
-    subsample_ratio = config.dataset.subsample_ratio
-    if subsample_ratio > 0.:
-        train_dataset, _ = split_dataset(train_dataset, subsample_ratio)
-        test_dataset, _ = split_dataset(test_dataset, subsample_ratio)
+    subsample_ratio = config.dataset.subsample.ratio
+    if subsample_ratio < 1.0:
+        train_splits = split_dataset(train_dataset, subsample_ratio,
+                                     config.dataset.subsample.seed)
+        train_dataset = train_splits[config.dataset.subsample.split]
+        test_splits = split_dataset(test_dataset, subsample_ratio,
+                                    config.dataset.subsample.seed)
+        test_dataset = test_splits[config.dataset.subsample.split]
     if config.trainer.eval_dataset == 'val':
         train_dataset, test_dataset = split_dataset(train_dataset, 0.8)
 
@@ -31,10 +35,11 @@ def get_loaders(config):
     return train_loader, test_loader
 
 
-def split_dataset(dataset, ratio):
+def split_dataset(dataset, ratio, seed=None):
     num_total = len(dataset)
     num_split = int(num_total * ratio)
-    return random_split(dataset, [num_split, num_total - num_split])
+    gen = torch.Generator() if seed is None else torch.Generator().manual_seed(seed)
+    return random_split(dataset, [num_split, num_total - num_split], gen)
 
 
 def get_augmentation(config):
