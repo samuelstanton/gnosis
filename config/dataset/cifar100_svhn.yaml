@@ -9,7 +9,10 @@ init:
 name: cifar100_svhn
 num_classes: 100
 input_size: 32
-subsample_ratio: 1.0
+subsample:
+  ratio: 1.0
+  seed: 0
+  split: 0
 statistics:
   mean_statistics:
     - 0.5071
