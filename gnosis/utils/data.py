@@ -23,16 +23,15 @@ def get_loaders(config):
         train_splits = split_dataset(train_dataset, subsample_ratio,
                                      config.dataset.subsample.seed)
         train_dataset = train_splits[config.dataset.subsample.split]
-        test_splits = split_dataset(test_dataset, subsample_ratio,
-                                    config.dataset.subsample.seed)
-        test_dataset = test_splits[config.dataset.subsample.split]
+    else:
+        train_splits = [train_dataset]
     if config.trainer.eval_dataset == 'val':
         train_dataset, test_dataset = split_dataset(train_dataset, 0.8)
 
     train_loader = hydra.utils.instantiate(config.dataloader, dataset=train_dataset)
     test_loader = hydra.utils.instantiate(config.dataloader, dataset=test_dataset)
 
-    return train_loader, test_loader
+    return train_loader, test_loader, train_splits
 
 
 def split_dataset(dataset, ratio, seed=None):
@@ -151,13 +150,16 @@ def save_logits(config, student, teacher, synth_data, logger):
     config = copy.deepcopy(config)
     config.augmentation.transforms_list = None  # no data augmentation for evaluation
     config.dataloader.shuffle = False
-    train_loader, test_loader = get_loaders(config)
+    _, test_loader, train_splits = get_loaders(config)
+    distill_splits = [train_splits[i] for i in config.distill_loader.splits]
+    distill_loader = hydra.utils.instantiate(config.distill_loader, teacher=teacher,
+                                             datasets=distill_splits)
 
-    student_train = get_logits(student, train_loader)
+    student_train = get_logits(student, distill_loader)
     logger.save_obj(student_train, 'student_train_logits.pkl')
-    teacher_train = get_logits(teacher, train_loader)
+    teacher_train = get_logits(teacher, distill_loader)
     logger.save_obj(teacher_train, 'teacher_train_logits.pkl')
-    del student_train, teacher_train, train_loader
+    del student_train, teacher_train, distill_loader
 
     student_test = get_logits(student, test_loader)
     logger.save_obj(student_test, 'student_test_logits.pkl')

@@ -5,6 +5,7 @@ import math
 
 from gnosis import distillation, models
 from gnosis.boilerplate import train_loop, eval_epoch, supervised_epoch, distillation_epoch
+from gnosis.distillation.dataloaders import DistillLoader
 from gnosis.utils.data import get_loaders, make_synth_teacher_data, save_logits, get_distill_loaders
 from gnosis.utils.checkpointing import load_teachers, load_generator
 from gnosis.utils.scripting import startup
@@ -14,7 +15,7 @@ from gnosis.utils.scripting import startup
 def main(config):
     # construct logger, model, dataloaders
     config, logger, tb_logger = startup(config)
-    train_loader, test_loader = get_loaders(config)
+    train_loader, test_loader, train_splits = get_loaders(config)
     tb_logger.add_text("hypers/transforms", ''.join(config.augmentation.transforms_list), 0)
 
     if config.teacher.use_ckpts:
@@ -63,7 +64,11 @@ def main(config):
 
     print('==== ensembling teacher classifiers ====')
     teacher = models.ClassifierEnsemble(*teachers)
-    teacher_train_metrics = eval_epoch(teacher, train_loader, models.ensemble.ClassifierEnsembleLoss(teacher))
+    distill_splits = [train_splits[i] for i in config.distill_loader.splits]
+    distill_loader = hydra.utils.instantiate(config.distill_loader, teacher=teacher,
+                                             datasets=distill_splits)
+    teacher_train_metrics = eval_epoch(teacher, distill_loader,
+                                       models.ensemble.ClassifierEnsembleLoss(teacher))
     teacher_test_metrics = eval_epoch(teacher, test_loader, models.ensemble.ClassifierEnsembleLoss(teacher))
 
     student = hydra.utils.instantiate(config.classifier)
@@ -87,8 +92,8 @@ def main(config):
         config,
         student,
         train_closure=distillation_epoch,
-        train_loader=train_loader,
-        train_kwargs=dict(loss_fn=student_loss, teacher=teacher, synth_loader=synth_loader),
+        train_loader=distill_loader,
+        train_kwargs=dict(loss_fn=student_loss),
         eval_closure=eval_epoch,
         eval_loader=test_loader,
         eval_kwargs=dict(loss_fn=student_loss, teacher=teacher),
