@@ -61,7 +61,7 @@ teacher:
             ${classifier.name}${teacher.depth}_${dataset.name}_${augmentation.normalization}"
 
 trainer:
-  num_epochs: 200
+  num_epochs: 300
   eval_period: 10
   eval_dataset: test
   optimizer:
@@ -82,6 +82,19 @@ dataloader:
   _target_: torch.utils.data.DataLoader
   batch_size: 128
   shuffle: True
+
+distill_loader:
+  _target_: gnosis.distillation.dataloaders.DistillLoader
+  splits:
+    - 0
+    - 1
+  temp:
+    - 4.0
+    - 1.0
+  mixup_alpha: ${mixup.alpha}
+  batch_size: ${dataloader.batch_size}
+  shuffle: True
+  drop_last: False
 
 seed:
 trial_id: 0

@@ -22,11 +22,12 @@ class ClassifierStudentLoss(object):
         self.base_loss = base_loss
         self.alpha = alpha
 
-    def __call__(self, inputs, targets, teacher_logits):
+    def __call__(self, inputs, targets, teacher_logits, temp=None):
         real_batch_size = targets.size(0)
         student_logits = self.student(inputs)
         hard_loss = F.cross_entropy(student_logits[:real_batch_size], targets)
-        soft_loss = self.base_loss(teacher_logits, student_logits)
+        temp = torch.ones_like(student_logits) if temp is None else temp.unsqueeze(-1)
+        soft_loss = self.base_loss(teacher_logits, student_logits, temp)
         loss = self.alpha * hard_loss + (1 - self.alpha) * soft_loss
         return loss, student_logits
 
@@ -167,10 +168,10 @@ class TeacherStudentSoftCrossEntLoss(object):
         super().__init__()
         self.temp = temp
 
-    def __call__(self, teacher_logits, student_logits):
+    def __call__(self, teacher_logits, student_logits, temp):
         if teacher_logits.dim() == 3:
             teacher_logits = reduce_ensemble_logits(teacher_logits)
-        teacher_probs = F.softmax(teacher_logits / self.temp, dim=-1)
-        student_logp = F.log_softmax(student_logits / self.temp, dim=-1)
-        loss = -(self.temp ** 2) * (teacher_probs * student_logp).sum(-1).mean()
+        teacher_probs = F.softmax(teacher_logits / temp, dim=-1)
+        student_logp = F.log_softmax(student_logits / temp, dim=-1)
+        loss = -(temp ** 2 * teacher_probs * student_logp).sum(-1).mean()
         return loss

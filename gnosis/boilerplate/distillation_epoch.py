@@ -2,6 +2,7 @@ import numpy as np
 from tqdm import tqdm
 from upcycle.cuda import try_cuda
 import torch
+from torch.utils.data import DataLoader
 from gnosis.distillation.classification import reduce_ensemble_logits
 from gnosis.utils.metrics import batch_calibration_stats, expected_calibration_err, ece_bin_metrics
 
@@ -18,45 +19,43 @@ def mixup_data(x, alpha):
     return mixed_x
 
 
-def make_generator(teacher, train_loader, synth_loader, mixup_alpha):
-    if synth_loader is None:
-        for input_batch, target_batch in train_loader:
-            input_batch, target_batch = try_cuda(input_batch, target_batch)
-            if mixup_alpha > 0:
-                input_batch = mixup_data(input_batch, mixup_alpha)
-            with torch.no_grad():
-                logit_batch = teacher(input_batch)
-                logit_batch = reduce_ensemble_logits(logit_batch)
-            yield input_batch, target_batch, logit_batch
-    else:
-        for real_batch, synth_batch in zip(train_loader, synth_loader):
-            real_batch = try_cuda(*real_batch)
-            synth_batch = try_cuda(*synth_batch)
-            with torch.no_grad():
-                real_logits = teacher(try_cuda(real_batch[0]))
-                real_logits = reduce_ensemble_logits(real_logits)
-                input_batch = torch.cat([real_batch[0], synth_batch[0]])
-                target_batch = real_batch[1]
-                logit_batch = torch.cat([real_logits, synth_batch[2]])
-            yield input_batch, target_batch, logit_batch
+# def make_generator(teacher, train_loader, synth_loader, mixup_alpha):
+#     if synth_loader is None:
+#         for input_batch, target_batch in train_loader:
+#             input_batch, target_batch = try_cuda(input_batch, target_batch)
+#             if mixup_alpha > 0:
+#                 input_batch = mixup_data(input_batch, mixup_alpha)
+#             with torch.no_grad():
+#                 logit_batch = teacher(input_batch)
+#                 logit_batch = reduce_ensemble_logits(logit_batch)
+#             yield input_batch, target_batch, logit_batch
+#     else:
+#         for real_batch, synth_batch in zip(train_loader, synth_loader):
+#             real_batch = try_cuda(*real_batch)
+#             synth_batch = try_cuda(*synth_batch)
+#             with torch.no_grad():
+#                 real_logits = teacher(try_cuda(real_batch[0]))
+#                 real_logits = reduce_ensemble_logits(real_logits)
+#                 input_batch = torch.cat([real_batch[0], synth_batch[0]])
+#                 target_batch = real_batch[1]
+#                 logit_batch = torch.cat([real_logits, synth_batch[2]])
+#             yield input_batch, target_batch, logit_batch
 
 
-def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha, loss_fn,
-                       teacher, synth_loader):
+def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha, loss_fn):
     student.train()
     train_loss, correct, agree, total, real_total = 0, 0, 0, 0, 0
     ece_stats = None
     desc = ('[student] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
             (epoch, get_lr(lr_scheduler), 0, 0, correct, total))
-    num_batches = len(train_loader) if synth_loader is None else min(len(train_loader), len(synth_loader))
+    num_batches = len(train_loader)
     if mixup_alpha > 0 and loss_fn.alpha > 0:
         raise NotImplementedError('Mixup not implemented for hard label distillation loss.')
-    batch_generator = make_generator(teacher, train_loader, synth_loader, mixup_alpha)
-    prog_bar = tqdm(enumerate(batch_generator), total=num_batches, desc=desc, leave=True)
-    for batch_idx, (inputs, targets, teacher_logits) in prog_bar:
-        inputs, targets, teacher_logits = try_cuda(inputs, targets, teacher_logits)
+
+    prog_bar = tqdm(enumerate(train_loader), total=num_batches, desc=desc, leave=True)
+    for batch_idx, (inputs, targets, teacher_logits, temp) in prog_bar:
         optimizer.zero_grad()
-        loss, student_logits = loss_fn(inputs, targets, teacher_logits)
+        loss, student_logits = loss_fn(inputs, targets, teacher_logits, temp)
         loss.backward()
         optimizer.step()
 
