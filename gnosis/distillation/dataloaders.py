@@ -53,6 +53,8 @@ class DistillLoader(object):
             targets = cuda.try_cuda(torch.cat([b[1] for b in batches]))
             with torch.no_grad():
                 logits = reduce_ensemble_logits(self.teacher(inputs))
-            temp = torch.cat([torch.empty_like(b[1]).fill_(t) for b, t in zip(batches, self.temp)])
+            temp = torch.cat([
+                torch.empty_like(b[1]).float().fill_(t) for b, t in zip(batches, self.temp)
+            ])
             temp = cuda.try_cuda(temp)
             yield inputs, targets, logits, temp
