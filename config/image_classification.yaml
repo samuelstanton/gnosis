@@ -58,7 +58,8 @@ teacher:
   shuffle_ckpts: False
   ckpt_dir:
             "data/experiments/image_classification/classifier_checkpoints/\
-            ${classifier.name}${teacher.depth}_${dataset.name}_${augmentation.normalization}"
+            ${classifier.name}${teacher.depth}_${dataset.name}_subsample_\
+            ${dataset.subsample.ratio}_${augmentation.normalization}"
 
 trainer:
   num_epochs: 300
@@ -106,7 +107,8 @@ project_dir: cwd
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 exp_name:
-        "synth_aug_${trainer.synth_aug.ratio}_${dataset.name}_${loss.name}_alpha_${loss.alpha}_${version}/\
+        "subsample_split/${dataset.name}_subsample_${dataset.subsample.ratio}_split_\
+         ${distill_loader.splits}_alpha_${loss.alpha}_temp_${distill_loader.temp}/\
          preresnet${teacher.depth}_${teacher.num_components}-preresnet${classifier.depth}_1"
 
 # Checkpointing
