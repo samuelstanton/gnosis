@@ -15,7 +15,6 @@ from torchvision.datasets.folder import ImageFolder
 
 def get_loaders(config):
     train_transform, test_transform = get_augmentation(config)
-
     if config.dataset.name == 'tiny_imagenet':
         train_dataset = ImageFolder(root=os.path.join(config.dataset.root_dir, 'train'), transform=train_transform)
         test_dataset = ImageFolder(root=os.path.join(config.dataset.root_dir, 'val'), transform=test_transform)
@@ -25,7 +24,12 @@ def get_loaders(config):
 
     if config.dataset.shuffle_train_targets.enabled:
         random.seed(config.dataset.shuffle_train_targets.seed)
-        random.shuffle(train_dataset.targets)
+        num_shuffled = int(len(train_dataset) * config.dataset.shuffle_train_targets.ratio)
+        shuffle_start = random.randint(0, len(train_dataset) - num_shuffled)
+        target_copy = train_dataset.targets[shuffle_start:shuffle_start + num_shuffled]
+        random.seed(config.dataset.shuffle_train_targets.seed)  # for backwards-compatibility
+        random.shuffle(target_copy)
+        train_dataset.targets[shuffle_start:shuffle_start + num_shuffled] = target_copy
 
     subsample_ratio = config.dataset.subsample.ratio
     if subsample_ratio < 1.0:
