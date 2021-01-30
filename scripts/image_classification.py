@@ -97,7 +97,8 @@ def main(config):
     )
     for r in records:
         r.update(dict(teacher_train_acc=teacher_train_metrics['test_acc'],
-                      teacher_test_acc=teacher_test_metrics['test_acc']))
+                      teacher_test_acc=teacher_test_metrics['test_acc'],
+                      teacher_test_ece=teacher_test_metrics['test_ece']))
     logger.add_table(f'student_train_metrics', records)
     logger.write_csv()
     logger.save_obj(student.state_dict(), f'student.ckpt')
