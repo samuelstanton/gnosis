@@ -50,6 +50,7 @@ augmentation:
 
 mixup:
   alpha: 0.  # if alpha > 0, the mixup training is active
+  batch_portion: 1.
 
 teacher:
   depth: ${classifier.depth}
