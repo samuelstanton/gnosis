@@ -58,8 +58,7 @@ teacher:
   shuffle_ckpts: False
   ckpt_dir:
             "data/experiments/image_classification/classifier_checkpoints/\
-            ${classifier.name}${teacher.depth}_${dataset.name}_subsample_\
-            ${dataset.subsample.ratio}_${augmentation.normalization}"
+            ${classifier.name}${teacher.depth}_${dataset.name}_${augmentation.normalization}"
 
 trainer:
   num_epochs: 300
@@ -88,27 +87,25 @@ distill_loader:
   _target_: gnosis.distillation.dataloaders.DistillLoader
   splits:
     - 0
-    - 1
-  temp:
-    - 4.0
-    - 1.0
+  temp: 4.0
   mixup_alpha: ${mixup.alpha}
   batch_size: ${dataloader.batch_size}
   shuffle: True
   drop_last: False
+  synth_ratio: 0.0
 
 seed:
 trial_id: 0
 project_name: gnosis
-version: v0.0.10
+version: v0.0.11
 
 # Directories for loading and storing data
 project_dir: cwd
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 exp_name:
-        "subsample_split/${dataset.name}_subsample_${dataset.subsample.ratio}_split_\
-         ${distill_loader.splits}_alpha_${loss.alpha}_temp_${distill_loader.temp}/\
+        "synthetic_augmentation/${dataset.name}_synth_ratio_${distill_loader.synth_ratio}_\
+         alpha_${loss.alpha}_temp_${distill_loader.temp}/\
          preresnet${teacher.depth}_${teacher.num_components}-preresnet${classifier.depth}_1"
 
 # Checkpointing

@@ -145,7 +145,7 @@ def get_logits(model, data_loader):
     return torch.cat(logits, dim=0)
 
 
-def save_logits(config, student, teacher, synth_data, logger):
+def save_logits(config, student, teacher, generator, logger):
     print('==== saving logits ====')
     config = copy.deepcopy(config)
     config.augmentation.transforms_list = None  # no data augmentation for evaluation
@@ -153,7 +153,7 @@ def save_logits(config, student, teacher, synth_data, logger):
     _, test_loader, train_splits = get_loaders(config)
     distill_splits = [train_splits[i] for i in config.distill_loader.splits]
     distill_loader = hydra.utils.instantiate(config.distill_loader, teacher=teacher,
-                                             datasets=distill_splits)
+                                             datasets=distill_splits, synth_sampler=generator)
 
     student_train = get_logits(student, distill_loader)
     logger.save_obj(student_train, 'student_train_logits.pkl')
@@ -167,11 +167,11 @@ def save_logits(config, student, teacher, synth_data, logger):
     logger.save_obj(teacher_test, 'teacher_test_logits.pkl')
     del student_test, teacher_test, test_loader
 
-    if synth_data is None:
-        return None
-    synth_loader = DataLoader(TensorDataset(*synth_data), shuffle=False,
-                              batch_size=config.dataloader.batch_size)
-    student_synth = get_logits(student, synth_loader)
-    logger.save_obj(student_synth, 'student_synth_logits.pkl')
-    teacher_synth = get_logits(teacher, synth_loader)
-    logger.save_obj(teacher_synth, 'teacher_synth_logits.pkl')
+    # if synth_data is None:
+    #     return None
+    # synth_loader = DataLoader(TensorDataset(*synth_data), shuffle=False,
+    #                           batch_size=config.dataloader.batch_size)
+    # student_synth = get_logits(student, synth_loader)
+    # logger.save_obj(student_synth, 'student_synth_logits.pkl')
+    # teacher_synth = get_logits(teacher, synth_loader)
+    # logger.save_obj(teacher_synth, 'teacher_synth_logits.pkl')

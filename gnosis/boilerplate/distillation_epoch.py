@@ -46,7 +46,7 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
     student.train()
     train_loss, correct, agree, total, real_total = 0, 0, 0, 0, 0
     ece_stats = None
-    desc = ('[student] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
+    desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
             (epoch, get_lr(lr_scheduler), 0, 0, correct, total))
     num_batches = len(train_loader)
     if mixup_alpha > 0 and loss_fn.alpha > 0:
@@ -74,7 +74,7 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
             t1 + t2 for t1, t2 in zip(ece_stats, batch_ece_stats)
         ]
 
-        desc = ('[train] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
+        desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
                 (epoch, get_lr(lr_scheduler), train_loss / (batch_idx + 1),
                  100. * correct / total, correct, total))
         prog_bar.set_description(desc, refresh=True)

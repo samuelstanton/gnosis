@@ -5,7 +5,6 @@ import math
 
 from gnosis import distillation, models
 from gnosis.boilerplate import train_loop, eval_epoch, supervised_epoch, distillation_epoch
-from gnosis.distillation.dataloaders import DistillLoader
 from gnosis.utils.data import get_loaders, make_synth_teacher_data, save_logits, get_distill_loaders
 from gnosis.utils.checkpointing import load_teachers, load_generator
 from gnosis.utils.scripting import startup
@@ -62,11 +61,24 @@ def main(config):
     if config.trainer.distill_teacher is False:
         return float('NaN')
 
+    generator = None
+    if config.distill_loader.synth_ratio > 0:
+        assert config.augmentation.normalization == 'unitcube'  # GANs use Tanh activations when sampling
+        generator = load_generator(config)[0]
+        config.trainer.num_epochs = math.ceil(
+            config.trainer.num_epochs * (1 - config.distill_loader.synth_ratio)
+        )
+        config.trainer.eval_period = math.ceil(
+            config.trainer.eval_period * (1 - config.distill_loader.synth_ratio)
+        )
+        config.trainer.lr_scheduler.T_max = config.trainer.num_epochs
+        print(f'[info] adjusting num_epochs to {config.trainer.num_epochs}')
+
     print('==== ensembling teacher classifiers ====')
     teacher = models.ClassifierEnsemble(*teachers)
     distill_splits = [train_splits[i] for i in config.distill_loader.splits]
     distill_loader = hydra.utils.instantiate(config.distill_loader, teacher=teacher,
-                                             datasets=distill_splits)
+                                             datasets=distill_splits, synth_sampler=generator)
     teacher_train_metrics = eval_epoch(teacher, distill_loader,
                                        models.ensemble.ClassifierEnsembleLoss(teacher))
     teacher_test_metrics = eval_epoch(teacher, test_loader, models.ensemble.ClassifierEnsembleLoss(teacher))
@@ -74,16 +86,7 @@ def main(config):
     student = hydra.utils.instantiate(config.classifier)
     student = try_cuda(student)
 
-    synth_data = None
-    if config.trainer.synth_aug.ratio > 0:
-        assert config.augmentation.normalization == 'unitcube'  # GANs use Tanh activations when sampling
-        generator = load_generator(config)[0]
-        num_synth = math.ceil(len(train_loader.dataset) * config.trainer.synth_aug.ratio)
-        print(f'==== generating {num_synth} synthetic examples ====')
-        synth_data = make_synth_teacher_data(generator, teacher, num_synth,
-                                             batch_size=config.dataloader.batch_size)
-        del generator  # free up memory
-    train_loader, synth_loader = get_distill_loaders(config, train_loader, synth_data)
+    train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
     student_base_loss = hydra.utils.instantiate(config.loss.init)
     student_loss = distillation.ClassifierStudentLoss(student, student_base_loss, config.loss.alpha)
 
@@ -108,7 +111,7 @@ def main(config):
     logger.save_obj(student.state_dict(), f'student.ckpt')
 
     del train_loader, test_loader  # these will be regenerated w/o augmentation
-    save_logits(config, student, teacher, synth_data, logger)
+    save_logits(config, student, teacher, generator, logger)
 
     return 1 - records[-1]['test_acc'] / 100.
 

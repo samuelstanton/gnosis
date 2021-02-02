@@ -26,7 +26,8 @@ class ClassifierStudentLoss(object):
         real_batch_size = targets.size(0)
         student_logits = self.student(inputs)
         hard_loss = F.cross_entropy(student_logits[:real_batch_size], targets)
-        temp = torch.ones_like(student_logits) if temp is None else temp.unsqueeze(-1)
+        # temp = torch.ones_like(student_logits) if temp is None else temp.unsqueeze(-1)
+        temp = torch.ones_like(student_logits) if temp is None else temp
         soft_loss = self.base_loss(teacher_logits, student_logits, temp)
         loss = self.alpha * hard_loss + (1 - self.alpha) * soft_loss
         return loss, student_logits

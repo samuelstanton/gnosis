@@ -19,7 +19,7 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
     for batch_idx, batch in prog_bar:
         with torch.no_grad():
             inputs, targets = try_cuda(batch[0], batch[1])
-            loss_args = [inputs, targets]
+            loss_args = [inputs[:targets.size(0)], targets]  # synthetic data won't be labeled
             if teacher is not None:
                 teacher_logits = teacher(inputs)
                 teacher_logits = reduce_ensemble_logits(teacher_logits)
