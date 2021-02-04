@@ -104,8 +104,9 @@ project_dir: cwd
 data_dir: data/experiments/image_classification
 log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 exp_name:
-        "synthetic_augmentation/${dataset.name}_synth_ratio_${distill_loader.synth_ratio}_\
-         alpha_${loss.alpha}_temp_${distill_loader.temp}/\
+        "subsample_split/\
+         ${dataset.name}_subsample_${dataset.subsample.ratio}_split_${distill_loader.splits}_\
+         ${loss.name}_alpha_${loss.alpha}_temp_${distill_loader.temp}/\
          preresnet${teacher.depth}_${teacher.num_components}-preresnet${classifier.depth}_1"
 
 # Checkpointing
