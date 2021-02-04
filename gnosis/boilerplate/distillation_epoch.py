@@ -76,7 +76,7 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
 
         desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
                 (epoch, get_lr(lr_scheduler), train_loss / (batch_idx + 1),
-                 100. * correct / total, correct, total))
+                 100. * correct / real_total, correct, real_total))
         prog_bar.set_description(desc, refresh=True)
 
     lr_scheduler.step()

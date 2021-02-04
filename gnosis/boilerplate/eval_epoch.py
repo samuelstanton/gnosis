@@ -12,7 +12,7 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
     total = 0
     agree = 0
     ece_stats = None
-    desc = ('[eval] Loss: %.3f | Acc: %.3f%% (%d/%d)'
+    desc = ('[eval] Loss: %.3f | Acc: %.3f (%d/%d)'
             % (test_loss / (0 + 1), 0, correct, total))
 
     prog_bar = tqdm(enumerate(loader), total=len(loader), desc=desc, leave=True)
@@ -39,7 +39,7 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
                 t1 + t2 for t1, t2 in zip(ece_stats, batch_ece_stats)
             ]
 
-            desc = ('[eval] Loss: %.3f | Acc: %.3f%% (%d/%d)'
+            desc = ('[eval] Loss: %.3f | Acc: %.3f (%d/%d)'
                     % (test_loss / (batch_idx + 1), 100. * correct / total, correct, total))
             prog_bar.set_description(desc, refresh=True)
 

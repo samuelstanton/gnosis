@@ -3,7 +3,7 @@ defaults:
   - classifier: preresnet
   - density_model: sngan
   - logger: local
-  - loss: ts_soft_cross_ent
+  - loss: ts_fwd_cross_ent
 #  - override hydra/sweeper: basic
 #  - override hydra/launcher: basic
 

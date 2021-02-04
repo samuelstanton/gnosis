@@ -161,7 +161,7 @@ class TeacherStudentHardCrossEntLoss(BaseClassificationDistillationLoss):
         return loss
 
 
-class TeacherStudentSoftCrossEntLoss(object):
+class TeacherStudentFwdCrossEntLoss(object):
     """Soft teacher/student cross entropy loss from [Hinton et al (2015)]
         (https://arxiv.org/abs/1503.02531)
     """
@@ -175,4 +175,21 @@ class TeacherStudentSoftCrossEntLoss(object):
         teacher_probs = F.softmax(teacher_logits / temp, dim=-1)
         student_logp = F.log_softmax(student_logits / temp, dim=-1)
         loss = -(temp ** 2 * teacher_probs * student_logp).sum(-1).mean()
+        return loss
+
+
+class TeacherStudentRevCrossEntLoss(object):
+    """Soft teacher/student cross entropy loss from [Hinton et al (2015)]
+        (https://arxiv.org/abs/1503.02531)
+    """
+    def __init__(self, temp, **kwargs):
+        super().__init__()
+        self.temp = temp
+
+    def __call__(self, teacher_logits, student_logits, temp):
+        if teacher_logits.dim() == 3:
+            teacher_logits = reduce_ensemble_logits(teacher_logits)
+        teacher_logp = F.log_softmax(teacher_logits / temp, dim=-1)
+        student_probs = F.softmax(student_logits / temp, dim=-1)
+        loss = -(temp ** 2 * student_probs * teacher_logp).sum(-1).mean()
         return loss

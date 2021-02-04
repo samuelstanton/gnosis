@@ -55,13 +55,13 @@ class DistillLoader(object):
     def generator(self):
         for batches in zip(*self.loaders):
             inputs = cuda.try_cuda(torch.cat([b[0] for b in batches]))
-            if self.mixup_alpha > 0:
-                inputs = mixup_data(inputs, self.mixup_alpha)
             if self.synth_ratio > 0:
                 synth_bs = int(self.synth_ratio * self.batch_size)
                 with torch.no_grad():
                     synth_inputs = self.synth_sampler.sample(synth_bs)
                 inputs = torch.cat([inputs, synth_inputs], dim=0)
+            if self.mixup_alpha > 0:
+                inputs = mixup_data(inputs, self.mixup_alpha)
             targets = cuda.try_cuda(torch.cat([b[1] for b in batches]))
             with torch.no_grad():
                 logits = reduce_ensemble_logits(self.teacher(inputs))
