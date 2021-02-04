@@ -1,0 +1,5 @@
+# @package _group_
+_target_: gnosis.models.make_lenet
+num_classes: ${dataset.num_classes}
+name: lenet
+depth: 0

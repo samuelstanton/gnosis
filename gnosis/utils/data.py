@@ -56,7 +56,7 @@ def split_dataset(dataset, ratio, seed=None):
 
 def get_augmentation(config):
     assert 'augmentation' in config.keys()
-    if config.augmentation.transforms_list is not None:
+    if len(config.augmentation.transforms_list) > 0:
         transforms_list = [hydra.utils.instantiate(config.augmentation[name])
                            for name in config.augmentation["transforms_list"]]
         if 'random_apply' in config.augmentation.keys() and config.augmentation.random_apply.p < 1:
