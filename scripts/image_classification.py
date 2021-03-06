@@ -50,7 +50,7 @@ def main(config):
             eval_loader=test_loader,
             eval_kwargs=dict(loss_fn=teacher_loss),
             tb_logger=tb_logger,
-            tb_prefix="teachers/teacher_{}/".format(i)
+            tb_prefix="teacher_{}_".format(i)
         )
         teachers.append(model)
         logger.add_table(f'teacher_{i}_train_metrics', records)
@@ -93,7 +93,7 @@ def main(config):
         eval_loader=test_loader,
         eval_kwargs=dict(loss_fn=student_loss, teacher=teacher),
         tb_logger=tb_logger,
-        tb_prefix="student/"
+        tb_prefix="student_"
     )
     for r in records:
         r.update(dict(teacher_train_acc=teacher_train_metrics['test_acc'],

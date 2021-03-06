@@ -14,21 +14,12 @@ def train_loop(config, student, train_closure, train_loader, train_kwargs,
                                       config.mixup.batch_portion, **train_kwargs)
 
         if epoch % config.trainer.eval_period < (config.trainer.eval_period - 1):
-            continue
-
-        eval_metrics = eval_closure(student, eval_loader, **eval_kwargs)
+            eval_metrics = {}
+        else:
+            eval_metrics = eval_closure(student, eval_loader, **eval_kwargs)
         train_metrics.update(eval_metrics)
         records.append(train_metrics)
 
-        # for key, val in train_metrics.items():
-        #     if key == epoch:
-        #         continue
-        #     tb_logger.add_scalar(f"{tb_prefix}train/{key}", val, epoch)
-        # for key, val in eval_metrics.items():
-        #     tb_logger.add_scalar(f"{tb_prefix}eval/{key}", val, epoch)
-        for key, val in itertools.chain(train_metrics.items(), eval_metrics.items()):
-            if key == epoch:
-                print("key == epoch")
-                continue
+        for key, val in train_metrics.items():
             tb_logger.add_scalar(f"{tb_prefix}{key}", val, epoch)
     return student, records
