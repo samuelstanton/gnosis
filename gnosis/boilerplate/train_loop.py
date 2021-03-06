@@ -1,6 +1,4 @@
 from hydra.utils import instantiate
-import itertools
-
 
 def train_loop(config, student, train_closure, train_loader, train_kwargs,
                eval_closure, eval_loader, eval_kwargs, tb_logger, tb_prefix=""):
