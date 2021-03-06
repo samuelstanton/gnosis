@@ -1,4 +1,5 @@
 from hydra.utils import instantiate
+import itertools
 
 
 def train_loop(config, student, train_closure, train_loader, train_kwargs,
@@ -19,11 +20,15 @@ def train_loop(config, student, train_closure, train_loader, train_kwargs,
         train_metrics.update(eval_metrics)
         records.append(train_metrics)
 
-        for key, val in train_metrics.items():
+        # for key, val in train_metrics.items():
+        #     if key == epoch:
+        #         continue
+        #     tb_logger.add_scalar(f"{tb_prefix}train/{key}", val, epoch)
+        # for key, val in eval_metrics.items():
+        #     tb_logger.add_scalar(f"{tb_prefix}eval/{key}", val, epoch)
+        for key, val in itertools.chain(train_metrics.items(), eval_metrics.items()):
             if key == epoch:
+                print("key == epoch")
                 continue
-            tb_logger.add_scalar(f"{tb_prefix}train/{key}", val, epoch)
-        for key, val in eval_metrics.items():
-            tb_logger.add_scalar(f"{tb_prefix}eval/{key}", val, epoch)
-
+            tb_logger.add_scalar(f"{tb_prefix}train/{key}", val, epoch)\
     return student, records
