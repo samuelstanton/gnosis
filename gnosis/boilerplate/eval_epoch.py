@@ -44,12 +44,14 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
             prog_bar.set_description(desc, refresh=True)
 
     ece = expected_calibration_err(*ece_stats, num_samples=total)
-    metrics = dict(
-        test_loss=test_loss / len(loader),
-        test_acc=100. * correct / total,
-        test_ece=ece
-    )
-    metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='test'))
+    metrics = {
+        "metrics/test_loss": test_loss / len(loader),
+        "metrics/test_acc": 100. * correct / total,
+        "metrics/test_ece": ece
+    }
+
+    metrics.update(ece_bin_metrics(*ece_stats, num_bins=10,
+                                   prefix='calibration/test'))
     if teacher is not None:
         metrics.update(dict(test_ts_agree=100. * agree / total))
     return metrics

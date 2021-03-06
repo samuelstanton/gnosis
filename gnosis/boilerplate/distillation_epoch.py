@@ -85,13 +85,14 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
 
     lr_scheduler.step()
     ece = expected_calibration_err(*ece_stats, num_samples=total)
-    metrics = dict(
-            train_loss=train_loss / num_batches,
-            train_acc=100 * correct / real_total,
-            train_ts_agree=100 * agree / total,
-            train_ece=ece,
-            lr=lr_scheduler.get_last_lr()[0],
-            epoch=epoch
-        )
-    metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='train'))
+    metrics = {
+            "metrics/train_loss": train_loss / num_batches,
+            "metrics/train_acc": 100 * correct / real_total,
+            "metrics/train_ts_agree": 100 * agree / total,
+            "metrics/train_ece": ece,
+            "telemetry/lr": lr_scheduler.get_last_lr()[0],
+            "telemetry/epoch": epoch
+    }
+    metrics.update(ece_bin_metrics(*ece_stats, num_bins=10,
+                                   prefix='calibration/train'))
     return metrics
