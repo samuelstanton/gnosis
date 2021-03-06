@@ -30,5 +30,5 @@ def train_loop(config, student, train_closure, train_loader, train_kwargs,
             if key == epoch:
                 print("key == epoch")
                 continue
-            tb_logger.add_scalar(f"{tb_prefix}{key}", val, epoch)\
+            tb_logger.add_scalar(f"{tb_prefix}{key}", val, epoch)
     return student, records
