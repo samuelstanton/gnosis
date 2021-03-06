@@ -1,0 +1,4 @@
+# @package _group_
+_target_: torch.optim.lr_scheduler.CosineAnnealingLR
+T_max: ${trainer.num_epochs}
+eta_min: 1e-4

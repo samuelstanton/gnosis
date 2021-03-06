@@ -4,6 +4,7 @@ defaults:
   - density_model: sngan
   - logger: local
   - loss: ts_soft_cross_ent
+  - lr_scheduler: cosine_annealing
 #  - override hydra/sweeper: basic
 #  - override hydra/launcher: basic
 
@@ -71,10 +72,6 @@ trainer:
     weight_decay: 1e-4
     momentum: 0.9
     nesterov: True
-  lr_scheduler:
-    _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-    T_max: ${trainer.num_epochs}
-    eta_min: 1e-4
   distill_teacher: True
   synth_aug:
     ratio: 0.

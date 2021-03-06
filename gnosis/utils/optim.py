@@ -1,3 +1,5 @@
+from torch import optim
+
 def get_decay_fn(initial_val, final_val, start, stop):
     """
     Returns function handle to use in torch.optim.lr_scheduler.LambdaLR.
@@ -16,3 +18,7 @@ def get_decay_fn(initial_val, final_val, start, stop):
     assert decay_fn(start) * initial_val == initial_val
     assert decay_fn(stop) * initial_val == final_val
     return decay_fn
+
+
+def get_const_lr_scheduler(optimizer):
+    return optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda _: 1.)
