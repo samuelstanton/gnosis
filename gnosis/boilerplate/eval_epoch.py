@@ -45,9 +45,9 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
 
     ece = expected_calibration_err(*ece_stats, num_samples=total)
     metrics = {
-        "metrics/test_loss": test_loss / len(loader),
-        "metrics/test_acc": 100. * correct / total,
-        "metrics/test_ece": ece
+        "test/loss": test_loss / len(loader),
+        "test/acc": 100. * correct / total,
+        "test/ece": ece
     }
 
     metrics.update(ece_bin_metrics(*ece_stats, num_bins=10,

@@ -37,8 +37,8 @@ def supervised_epoch(net, loader, optimizer, lr_scheduler, epoch, mixup_alpha, m
 
     lr_scheduler.step()
     metrics = {
-        "metrics/train_loss": train_loss / len(loader),
-        "metrics/train_acc": 100 * correct / total,
+        "train/loss": train_loss / len(loader),
+        "train/acc": 100 * correct / total,
         "telemetry/lr": lr_scheduler.get_last_lr()[0],
         "telemetry/epoch": epoch
     }
