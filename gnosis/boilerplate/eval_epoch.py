@@ -53,5 +53,5 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
     metrics.update(ece_bin_metrics(*ece_stats, num_bins=10,
                                    prefix='calibration/test'))
     if teacher is not None:
-        metrics.update(dict(test_ts_agree=100. * agree / total))
+        metrics.update({"test/ts_agree": 100. * agree / total})
     return metrics
