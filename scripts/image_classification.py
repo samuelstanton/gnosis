@@ -65,14 +65,14 @@ def main(config):
     if config.distill_loader.synth_ratio > 0:
         assert config.augmentation.normalization == 'unitcube'  # GANs use Tanh activations when sampling
         generator = load_generator(config)[0]
-        config.trainer.num_epochs = math.ceil(
-            config.trainer.num_epochs * (1 - config.distill_loader.synth_ratio)
-        )
-        config.trainer.eval_period = math.ceil(
-            config.trainer.eval_period * (1 - config.distill_loader.synth_ratio)
-        )
-        config.trainer.lr_scheduler.T_max = config.trainer.num_epochs
-        print(f'[info] adjusting num_epochs to {config.trainer.num_epochs}')
+        # config.trainer.num_epochs = math.ceil(
+        #     config.trainer.num_epochs * (1 - config.distill_loader.synth_ratio)
+        # )
+        # config.trainer.eval_period = math.ceil(
+        #     config.trainer.eval_period * (1 - config.distill_loader.synth_ratio)
+        # )
+        # config.trainer.lr_scheduler.T_max = config.trainer.num_epochs
+        # print(f'[info] adjusting num_epochs to {config.trainer.num_epochs}')
 
     print('==== ensembling teacher classifiers ====')
     teacher = models.ClassifierEnsemble(*teachers)
