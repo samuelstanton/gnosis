@@ -5,6 +5,7 @@ defaults:
   - logger: local
   - loss: ts_soft_cross_ent
   - lr_scheduler: cosine_annealing
+  - optimizer: sgd
 #  - override hydra/sweeper: basic
 #  - override hydra/launcher: basic
 
@@ -66,12 +67,7 @@ trainer:
   num_epochs: 200
   eval_period: 10
   eval_dataset: test
-  optimizer:
-    _target_: torch.optim.SGD
-    lr: 5e-2
-    weight_decay: 1e-4
-    momentum: 0.9
-    nesterov: True
+
   distill_teacher: True
   synth_aug:
     ratio: 0.
