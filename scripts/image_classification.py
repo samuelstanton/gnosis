@@ -105,8 +105,8 @@ def main(config):
 
     del train_loader, test_loader  # these will be regenerated w/o augmentation
     save_logits(config, student, teacher, synth_data, logger)
-
-    return 1 - records[-1]['test_acc'] / 100.
+    res = 1 - records[-1]['test_acc'] / 100. if len(records) > 0 else float('NaN')
+    return res
 
 
 if __name__ == '__main__':
