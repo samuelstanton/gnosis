@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 from gnosis.distillation.classification import reduce_ensemble_logits
 from gnosis.utils.metrics import batch_calibration_stats, expected_calibration_err, ece_bin_metrics
+from gnosis.models.preresnet import freeze_batchnorm
 
 
 def get_lr(lr_scheduler):
@@ -42,12 +43,16 @@ def mixup_data(x, alpha):
 #             yield input_batch, target_batch, logit_batch
 
 
-def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha, loss_fn):
+def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha, loss_fn,
+                       freeze_bn):
     student.train()
+    if freeze_bn:
+        freeze_batchnorm(student)
+
     train_loss, correct, agree, total, real_total = 0, 0, 0, 0, 0
     ece_stats = None
-    desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
-            (epoch, get_lr(lr_scheduler), 0, 0, correct, total))
+    desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc : %.2f%% (%d/%d) | agree : %.2f%% (%d/%d)' %
+            (epoch, get_lr(lr_scheduler), 0, 0, correct, total, 0, agree, total))
     num_batches = len(train_loader)
     if mixup_alpha > 0 and loss_fn.alpha > 0:
         raise NotImplementedError('Mixup not implemented for hard label distillation loss.')
@@ -74,9 +79,9 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
             t1 + t2 for t1, t2 in zip(ece_stats, batch_ece_stats)
         ]
 
-        desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
+        desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc: %.2f%% (%d/%d) | agree : %.2f%% (%d/%d)' %
                 (epoch, get_lr(lr_scheduler), train_loss / (batch_idx + 1),
-                 100. * correct / real_total, correct, real_total))
+                 100. * correct / real_total, correct, real_total, 100. * agree / total, agree, total))
         prog_bar.set_description(desc, refresh=True)
 
     lr_scheduler.step()

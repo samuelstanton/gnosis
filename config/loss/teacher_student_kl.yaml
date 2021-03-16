@@ -1,5 +1,5 @@
 # @package _group_
 name: ts_kl
-alpha: 0.5
+alpha: 0.0
 init:
   _target_: gnosis.distillation.TeacherStudentKLLoss
