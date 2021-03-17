@@ -83,9 +83,10 @@ def main(config):
         distill_splits = [train_splits[i] for i in config.distill_loader.splits]
         distill_loader = hydra.utils.instantiate(config.distill_loader, teacher=teacher,
                                                  datasets=distill_splits, synth_sampler=generator)
-        teacher_train_metrics = eval_epoch(teacher, distill_loader,
-                                           models.ensemble.ClassifierEnsembleLoss(teacher))
-        teacher_test_metrics = eval_epoch(teacher, test_loader, models.ensemble.ClassifierEnsembleLoss(teacher))
+        teacher_train_metrics = eval_epoch(teacher, distill_loader, epoch=0,
+                                           loss_fn=models.ensemble.ClassifierEnsembleLoss(teacher))
+        teacher_test_metrics = eval_epoch(teacher, test_loader, epoch=0,
+                                          loss_fn=models.ensemble.ClassifierEnsembleLoss(teacher))
 
         student = hydra.utils.instantiate(config.classifier)
         student = try_cuda(student)
@@ -101,6 +102,7 @@ def main(config):
                 config.trainer.optimizer.lr * config.teacher.ckpt_init.loc_param,
                 config.trainer.lr_scheduler.eta_min
             )
+        logger.save_obj(student.state_dict(), 'student_init.ckpt')
 
         train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
         student_base_loss = hydra.utils.instantiate(config.loss.init)
@@ -117,7 +119,7 @@ def main(config):
             eval_loader=test_loader,
             eval_kwargs=dict(loss_fn=student_loss, teacher=teacher),
             tb_logger=tb_logger,
-            tb_prefix="student/"
+            tb_prefix="student/",
         )
         for r in records:
             r.update(dict(teacher_train_acc=teacher_train_metrics['test_acc'],

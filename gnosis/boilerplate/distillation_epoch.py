@@ -6,6 +6,8 @@ from torch.utils.data import DataLoader
 from gnosis.distillation.classification import reduce_ensemble_logits
 from gnosis.utils.metrics import batch_calibration_stats, expected_calibration_err, ece_bin_metrics
 from gnosis.models.preresnet import freeze_batchnorm
+from torch.distributions.kl import kl_divergence
+from torch.distributions import Categorical
 
 
 def get_lr(lr_scheduler):
@@ -50,6 +52,7 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
         freeze_batchnorm(student)
 
     train_loss, correct, agree, total, real_total = 0, 0, 0, 0, 0
+    kl = 0
     ece_stats = None
     desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc : %.2f%% (%d/%d) | agree : %.2f%% (%d/%d)' %
             (epoch, get_lr(lr_scheduler), 0, 0, correct, total, 0, agree, total))
@@ -74,6 +77,11 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
         correct += student_predicted[:real_batch_size].eq(targets).sum().item()
         agree += student_predicted.eq(teacher_predicted).sum().item()
 
+        kl += kl_divergence(
+            Categorical(logits=teacher_logits),
+            Categorical(logits=student_logits)
+        ).mean().item()
+
         batch_ece_stats = batch_calibration_stats(student_logits[:real_batch_size], targets, num_bins=10)
         ece_stats = batch_ece_stats if ece_stats is None else [
             t1 + t2 for t1, t2 in zip(ece_stats, batch_ece_stats)
@@ -91,6 +99,7 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
             train_acc=100 * correct / real_total,
             train_ts_agree=100 * agree / total,
             train_ece=ece,
+            train_ts_kl=kl / num_batches,
             lr=lr_scheduler.get_last_lr()[0],
             epoch=epoch
         )
