@@ -47,6 +47,7 @@ def make_generator(teacher, train_loader, synth_loader, mixup_alpha, mixup_porti
 def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha, mixup_portion,
                        loss_fn, teacher, synth_loader):
     student.train()
+    islbfgs = isinstance(optimizer, torch.optim.LBFGS)
     train_loss, correct, agree, total, real_total = 0, 0, 0, 0, 0
     ece_stats = None
     desc = ('[student] epoch: %d | lr: %.4f | loss: %.3f | acc: %.3f%% (%d/%d)' %
@@ -61,7 +62,14 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
         optimizer.zero_grad()
         loss, student_logits = loss_fn(inputs, targets, teacher_logits)
         loss.backward()
-        optimizer.step()
+        if islbfgs:
+            def closure():
+                with torch.no_grad():
+                    loss_val, _ = loss_fn(inputs, targets, teacher_logits)
+                return loss_val
+            optimizer.step(closure)
+        else:
+            optimizer.step()
 
         train_loss += loss.item()
         student_predicted = student_logits.argmax(-1)

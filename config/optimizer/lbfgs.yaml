@@ -1,0 +1,5 @@
+# @package _group_
+_target_: torch.optim.LBFGS
+lr: 1.
+max_iter: 20
+history_size: 100
