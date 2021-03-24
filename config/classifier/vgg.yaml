@@ -4,5 +4,5 @@ num_classes: ${dataset.num_classes}
 depth: 16
 batch_norm: False
 
-name: VGG
+name: vgg
 input_size: ${dataset.input_size}
