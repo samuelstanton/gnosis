@@ -1,0 +1,8 @@
+# @package _group_
+_target_: gnosis.models.VGG
+num_classes: ${dataset.num_classes}
+depth: 16
+batch_norm: False
+
+name: VGG
+input_size: ${dataset.input_size}
