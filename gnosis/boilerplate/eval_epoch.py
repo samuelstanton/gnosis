@@ -61,7 +61,7 @@ def eval_epoch(net, loader, epoch, loss_fn, teacher=None):
         test_nll=nll / len(loader),
         epoch=epoch,
     )
-    metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='test'))
+    # metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='test'))
     if teacher is not None:
         metrics.update(dict(test_ts_agree=100. * agree / total, test_ts_kl=kl / len(loader)))
     if teacher is not None and len(teacher.components) == 1:

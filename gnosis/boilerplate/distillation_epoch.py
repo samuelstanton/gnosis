@@ -109,5 +109,5 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
             lr=lr_scheduler.get_last_lr()[0],
             epoch=epoch
         )
-    metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='train'))
+    # metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='train'))
     return metrics
