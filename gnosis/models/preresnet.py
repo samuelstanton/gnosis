@@ -167,6 +167,10 @@ class PreResNet(nn.Module):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.GroupNorm):
+                if isinstance(m, nn.BatchNorm2d):
+                    print("Found Batchnorm layer")
+                elif isinstance(m, nn.GroupNorm):
+                    print("Found GroupNorm layer")
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 

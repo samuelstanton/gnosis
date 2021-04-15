@@ -104,7 +104,7 @@ def main(config):
             )
         logger.save_obj(student.state_dict(), 'student_init.ckpt')
 
-        train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
+        # train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
         student_base_loss = hydra.utils.instantiate(config.loss.init)
         student_loss = distillation.ClassifierStudentLoss(student, student_base_loss, config.loss.alpha)
 
