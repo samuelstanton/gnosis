@@ -50,6 +50,13 @@ def make_layernorm(n_channels):
     return nn.GroupNorm(1, n_channels)
 
 
+def get_normalization_fn(normalization_name):
+    normalization_fns = {
+        "batchnorm": make_batchnorm,
+        "layernorm": make_layernorm
+    }
+    return normalization_fns[normalization_name]
+
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -140,8 +147,10 @@ class Bottleneck(nn.Module):
 
 class PreResNet(nn.Module):
     def __init__(self, num_classes=10, depth=110, planes=(16, 32, 64), input_size=32, skip_connections=True,
-                 normalize_fn=make_batchnorm, **kwargs):
+                 normalization="batchnorm", **kwargs):
+
         super(PreResNet, self).__init__()
+        normalize_fn = get_normalization_fn(normalization)
         if depth >= 44:
             assert (depth - 2) % 9 == 0, "depth should be 9n+2"
             n = (depth - 2) // 9
