@@ -42,11 +42,6 @@ def conv3x3(in_planes, out_planes, stride=1):
                      padding=1, bias=False)
 
 
-def conv3x3(in_planes, out_planes, stride=1):
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
-
-
 def make_batchnorm(n_channels):
     return nn.BatchNorm2d(n_channels)
 
@@ -58,7 +53,7 @@ def make_layernorm(n_channels):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, normalize_fn=make_batchnorm):
+    def __init__(self, inplanes, planes, normalize_fn, stride=1, downsample=None):
         super(BasicBlock, self).__init__()
         self.bn1 = normalize_fn(inplanes)
         self.relu = nn.ReLU(inplace=True)
@@ -90,7 +85,7 @@ class BasicBlock(nn.Module):
 class BasicBlockNoSkip(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, stride=1, downsample=None, normalize_fn=make_batchnorm):
+    def __init__(self, in_planes, planes, normalize_fn, stride=1, downsample=None):
         super(BasicBlockNoSkip, self).__init__()
         self.conv1 = conv3x3(in_planes, planes, stride=stride)
         self.bn1 = normalize_fn(planes)
@@ -107,7 +102,7 @@ class BasicBlockNoSkip(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, normalize_fn=make_batchnorm):
+    def __init__(self, inplanes, planes, normalize_fn, stride=1, downsample=None):
         super(Bottleneck, self).__init__()
         self.bn1 = normalize_fn(inplanes)
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
@@ -159,9 +154,9 @@ class PreResNet(nn.Module):
         self.inplanes = 16
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1,
                                bias=False)
-        self.layer1 = self._make_layer(block, planes[0], n)
-        self.layer2 = self._make_layer(block, planes[1], n, stride=2)
-        self.layer3 = self._make_layer(block, planes[2], n, stride=2)
+        self.layer1 = self._make_layer(block, planes[0], n, normalize_fn)
+        self.layer2 = self._make_layer(block, planes[1], n, normalize_fn, stride=2)
+        self.layer3 = self._make_layer(block, planes[2], n, normalize_fn, stride=2)
         self.bn = normalize_fn(planes[2] * block.expansion)
         self.relu = nn.ReLU(inplace=True)
         self.avgpool = nn.AvgPool2d(8)
@@ -175,7 +170,7 @@ class PreResNet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
-    def _make_layer(self, block, planes, blocks, stride=1):
+    def _make_layer(self, block, planes, blocks, normalize_fn, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
@@ -184,10 +179,10 @@ class PreResNet(nn.Module):
             )
 
         layers = list()
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers.append(block(self.inplanes, planes, normalize_fn, stride, downsample))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
+            layers.append(block(self.inplanes, planes, normalize_fn))
 
         return nn.Sequential(*layers)
 
