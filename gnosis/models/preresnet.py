@@ -3,38 +3,10 @@
     ported from https://github.com/bearpaw/pytorch-classification/blob/master/models/cifar/preresnet.py
 """
 
-
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.transforms as transforms
 import math
-from collections import OrderedDict
-from upcycle import cuda
-
-
-def interpolate_net(net, ckpt_state_dict, distance_ratio, dataloader, freeze_bn):
-    interp_state_dict = OrderedDict()
-    for (net_key, net_param), (ckpt_key, ckpt_param) in zip(net.state_dict().items(), ckpt_state_dict.items()):
-        interp_state_dict[net_key] = (
-            distance_ratio * net_param + (1 - distance_ratio) * ckpt_param
-        )
-    net.load_state_dict(interp_state_dict)
-    if freeze_bn:
-        return net
-
-    # update batchnorm running stats
-    net.train()
-    for inputs, _ in dataloader:
-        with torch.no_grad():
-            net(cuda.try_cuda(inputs))
-    net.eval()
-    return net
-
-
-def freeze_batchnorm(net):
-    for m in net.modules():
-        if isinstance(m, nn.BatchNorm2d):
-            m.training = False
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -42,15 +14,23 @@ def conv3x3(in_planes, out_planes, stride=1):
                      padding=1, bias=False)
 
 
+def make_batchnorm(n_channels):
+    return nn.BatchNorm2d(n_channels)
+
+
+def make_layernorm(n_channels):
+    return nn.GroupNorm(1, n_channels)
+
+
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, normalize_fn=make_batchnorm):
         super(BasicBlock, self).__init__()
-        self.bn1 = nn.BatchNorm2d(inplanes)
+        self.bn1 = normalize_fn(inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.bn2 = normalize_fn(planes)
         self.conv2 = conv3x3(planes, planes)
         self.downsample = downsample
         self.stride = stride
@@ -77,12 +57,12 @@ class BasicBlock(nn.Module):
 class BasicBlockNoSkip(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, stride=1, downsample=None):
+    def __init__(self, in_planes, planes, stride=1, downsample=None, normalize_fn=make_batchnorm):
         super(BasicBlockNoSkip, self).__init__()
         self.conv1 = conv3x3(in_planes, planes, stride=stride)
-        self.bn1 = nn.BatchNorm2d(planes)
+        self.bn1 = normalize_fn(planes)
         self.conv2 = conv3x3(planes, planes, stride=1)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.bn2 = normalize_fn(planes)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
@@ -94,14 +74,14 @@ class BasicBlockNoSkip(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, normalize_fn=make_batchnorm):
         super(Bottleneck, self).__init__()
-        self.bn1 = nn.BatchNorm2d(inplanes)
+        self.bn1 = normalize_fn(inplanes)
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.bn2 = normalize_fn(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
                                padding=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes)
+        self.bn3 = normalize_fn(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
@@ -132,7 +112,7 @@ class Bottleneck(nn.Module):
 
 class PreResNet(nn.Module):
     def __init__(self, num_classes=10, depth=110, planes=(16, 32, 64), input_size=32, skip_connections=True,
-                 **kwargs):
+                 normalize_fn=make_batchnorm, **kwargs):
         super(PreResNet, self).__init__()
         if depth >= 44:
             assert (depth - 2) % 9 == 0, "depth should be 9n+2"
@@ -149,7 +129,7 @@ class PreResNet(nn.Module):
         self.layer1 = self._make_layer(block, planes[0], n)
         self.layer2 = self._make_layer(block, planes[1], n, stride=2)
         self.layer3 = self._make_layer(block, planes[2], n, stride=2)
-        self.bn = nn.BatchNorm2d(planes[2] * block.expansion)
+        self.bn = normalize_fn(planes[2] * block.expansion)
         self.relu = nn.ReLU(inplace=True)
         self.avgpool = nn.AvgPool2d(8)
         self.fc = nn.Linear(planes[2] * block.expansion * int(input_size / 32) ** 2, num_classes)
@@ -158,7 +138,7 @@ class PreResNet(nn.Module):
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
+            elif isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.GroupNorm):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 

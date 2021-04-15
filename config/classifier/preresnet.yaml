@@ -5,3 +5,4 @@ num_classes: ${dataset.num_classes}
 depth: 20
 input_size: ${dataset.input_size}
 skip_connections: True
+normalization: batchnorm

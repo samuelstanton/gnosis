@@ -1,7 +1,8 @@
-from .preresnet import PreResNet
+from .preresnet import PreResNet, make_batchnorm, make_lauernorm
 from .ensemble import ClassifierEnsemble
 from .dcgan import DCGenerator, DCDiscriminator, DCGAN
 from .sngan import SNGAN
+from .lenet import make_lenet
 
 
 __all__ = [
