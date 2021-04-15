@@ -1,4 +1,4 @@
-from .preresnet import PreResNet, make_batchnorm, make_lauernorm
+from .preresnet import PreResNet, make_batchnorm, make_layernorm
 from .ensemble import ClassifierEnsemble
 from .dcgan import DCGenerator, DCDiscriminator, DCGAN
 from .sngan import SNGAN
