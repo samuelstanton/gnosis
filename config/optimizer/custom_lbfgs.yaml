@@ -1,0 +1,6 @@
+# @package _group_
+_target_: LBFGS.FullBatchLBFGS
+lr: 1.
+history_size: 20
+line_search: Wolfe
+debug: True

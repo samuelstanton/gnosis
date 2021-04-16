@@ -98,13 +98,12 @@ def main(config):
                                       config.teacher.ckpt_init.loc_param, train_loader,
                                       config.trainer.freeze_bn)
             # scale the learning rate down if student is initialized close to teacher
-            config.trainer.optimizer.lr = max(
-                config.trainer.optimizer.lr * config.teacher.ckpt_init.loc_param,
+            config.optimizer.lr = max(
+                config.optimizer.lr * config.teacher.ckpt_init.loc_param,
                 config.trainer.lr_scheduler.eta_min
             )
         logger.save_obj(student.state_dict(), 'student_init.ckpt')
 
-        # train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
         student_base_loss = hydra.utils.instantiate(config.loss.init)
         student_loss = distillation.ClassifierStudentLoss(student, student_base_loss, config.loss.alpha)
 

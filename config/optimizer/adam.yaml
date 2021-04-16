@@ -1,0 +1,4 @@
+# @package _group_
+_target_: torch.optim.Adam
+lr: 5e-2
+weight_decay: 1e-4

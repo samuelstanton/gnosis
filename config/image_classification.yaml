@@ -4,6 +4,7 @@ defaults:
   - density_model: sngan
   - logger: local
   - loss: ts_fwd_cross_ent
+  - optimizer: sgd
 #  - override hydra/sweeper: basic
 #  - override hydra/launcher: basic
 
@@ -67,12 +68,6 @@ trainer:
   num_epochs: 300
   eval_period: 10
   eval_dataset: test
-  optimizer:
-    _target_: torch.optim.SGD
-    lr: 5e-2
-    weight_decay: 1e-4
-    momentum: 0.9
-    nesterov: True
   lr_scheduler:
     _target_: torch.optim.lr_scheduler.CosineAnnealingLR
     T_max: ${trainer.num_epochs}
