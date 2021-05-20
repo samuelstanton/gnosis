@@ -3,14 +3,19 @@ from tqdm import tqdm
 from upcycle.cuda import try_cuda
 from gnosis.distillation.classification import reduce_ensemble_logits
 from gnosis.utils.metrics import batch_calibration_stats, expected_calibration_err, ece_bin_metrics
+from torch.distributions import Categorical
+from torch.distributions.kl import kl_divergence
+import torch.nn.functional as F
 
 
-def eval_epoch(net, loader, loss_fn, teacher=None):
+def eval_epoch(net, loader, epoch, loss_fn, teacher=None):
     net.eval()
     test_loss = 0
     correct = 0
     total = 0
     agree = 0
+    nll = 0
+    kl = 0
     ece_stats = None
     desc = ('[eval] Loss: %.3f | Acc: %.3f (%d/%d)'
             % (test_loss / (0 + 1), 0, correct, total))
@@ -30,9 +35,14 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
             _, predicted = logits.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
+            nll += -F.log_softmax(logits, dim=-1)[..., targets].mean().item()
             if teacher is not None:
                 teacher_predicted = teacher_logits.argmax(-1)
                 agree += predicted.eq(teacher_predicted).sum().item()
+                kl += kl_divergence(
+                    Categorical(logits=teacher_logits),
+                    Categorical(logits=logits)
+                ).mean().item()
 
             batch_ece_stats = batch_calibration_stats(logits, targets, num_bins=10)
             ece_stats = batch_ece_stats if ece_stats is None else [
@@ -47,9 +57,11 @@ def eval_epoch(net, loader, loss_fn, teacher=None):
     metrics = dict(
         test_loss=test_loss / len(loader),
         test_acc=100. * correct / total,
-        test_ece=ece
+        test_ece=ece,
+        test_nll=nll / len(loader),
+        epoch=epoch,
     )
     metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='test'))
     if teacher is not None:
-        metrics.update(dict(test_ts_agree=100. * agree / total))
+        metrics.update(dict(test_ts_agree=100. * agree / total, test_ts_kl=kl / len(loader)))
     return metrics

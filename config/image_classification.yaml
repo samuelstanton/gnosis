@@ -55,6 +55,9 @@ teacher:
   depth: ${classifier.depth}
   num_components: 1
   use_ckpts: True
+  ckpt_init:
+    enabled: False
+    loc_param: 0.0
   shuffle_ckpts: False
   ckpt_dir:
             "data/experiments/image_classification/classifier_checkpoints/\
@@ -73,10 +76,11 @@ trainer:
   lr_scheduler:
     _target_: torch.optim.lr_scheduler.CosineAnnealingLR
     T_max: ${trainer.num_epochs}
-    eta_min: 1e-4
+    eta_min: 1e-6
   distill_teacher: True
   synth_aug:
     ratio: 0.
+  freeze_bn: False
 
 dataloader:
   _target_: torch.utils.data.DataLoader
@@ -94,7 +98,7 @@ distill_loader:
   drop_last: False
   synth_ratio: 0.0
 
-seed:
+seed: ${trial_id}
 trial_id: 0
 project_name: gnosis
 version: v0.0.11
