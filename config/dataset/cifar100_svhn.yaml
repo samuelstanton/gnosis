@@ -1,4 +1,3 @@
-# @package _group_
 init:
   _target_: gnosis.datasets.make_cifar100_svhn
   root: /datasets/cifar100_svhn

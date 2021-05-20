@@ -1,15 +1,21 @@
 import hydra
 from torch import optim
-from gnosis.utils.scripting import startup
+from upcycle.scripting import startup
 from gnosis.utils.data import get_loaders
 from gnosis.boilerplate import gan_train_epoch
 from upcycle import cuda
 from gnosis.utils.optim import get_decay_fn
+from tensorboardX import SummaryWriter
+from omegaconf import OmegaConf
 
 
 @hydra.main(config_path='../config/', config_name='image_generation.yaml')
 def main(config):
-    config, logger, _ = startup(config)
+    config, logger = startup(config)
+    tb_logger = SummaryWriter(log_dir=".")
+    tb_logger.add_text("hypers/transforms", ''.join(config.augmentation.transforms_list), 0)
+    tb_logger.add_text("hypers/hydra_cfg", OmegaConf.to_yaml(config))
+
     trainloader, testloader = get_loaders(config)
 
     gan = hydra.utils.instantiate(config.density_model)

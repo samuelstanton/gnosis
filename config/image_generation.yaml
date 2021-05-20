@@ -44,9 +44,13 @@ augmentation:
 # Directories for loading and storing data
 seed:
 trial_id: 0
-exp_name: ${density_model.name}_${dataset.name}_${version}
+
 data_dir: data/experiments/image_generation
-log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
+exp_name: ${density_model.name}_${dataset.name}_${version}
+job_name: null
+timestamp: ${now:%Y-%m-%d_%H-%M-%S}
+log_dir: data/experiments/${exp_name}/${job_name}/${timestamp}
+
 project_name: gnosis
 version: v0.0.7
 

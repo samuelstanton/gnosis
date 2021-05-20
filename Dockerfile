@@ -21,18 +21,18 @@ RUN python -m pip install --upgrade pip setuptools
 RUN apt install default-jre -y
 
 # Install AWS CLI
-RUN apt install curl unzip -y && \
-    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip" && \
-    unzip awscli-bundle.zip && \
-    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+#RUN apt install curl unzip -y && \
+#    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip" && \
+#    unzip awscli-bundle.zip && \
+#    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
 
 COPY datasets /datasets
 # copy over source code
 RUN mkdir -p /home/sam/Code/remote
 WORKDIR /home/sam/Code/remote
-COPY upcycle/ upcycle/
+#COPY upcycle/ upcycle/
 COPY gnosis/ gnosis/
-COPY hydra/ hydra/
+#COPY hydra/ hydra/
 COPY olive-oil-ml/ olive-oil-ml/
 
 # Install python dependencies
@@ -40,11 +40,11 @@ COPY olive-oil-ml/ olive-oil-ml/
 # consider removing olive-oil-ml as a dependency
 RUN python -m pip install --upgrade cython numpy scipy
 RUN python -m pip install -e olive-oil-ml/
-RUN python -m pip install -e upcycle/
-RUN python -m pip install -r gnosis/requirements.txt
-RUN python -m pip install -e gnosis/
-RUN python -m pip install -e hydra/
-RUN python -m pip install -e hydra/plugins/hydra_ray_launcher/
-RUN python -m pip install -e hydra/plugins/hydra_ax_sweeper/
+#RUN python -m pip install -e upcycle/
+#RUN python -m pip install -r gnosis/requirements.txt
+#RUN python -m pip install -e gnosis/
+#RUN python -m pip install -e hydra/
+#RUN python -m pip install -e hydra/plugins/hydra_ray_launcher/
+#RUN python -m pip install -e hydra/plugins/hydra_ax_sweeper/
 
 WORKDIR /home/sam/Code/remote/gnosis

@@ -7,15 +7,19 @@ from gnosis import distillation, models
 from gnosis.boilerplate import train_loop, eval_epoch, supervised_epoch, distillation_epoch
 from gnosis.utils.data import get_loaders, make_synth_teacher_data, save_logits, get_distill_loaders
 from gnosis.utils.checkpointing import load_teachers, load_generator
-from gnosis.utils.scripting import startup
+from upcycle.scripting import startup
+from tensorboardX import SummaryWriter
+from omegaconf import OmegaConf
 
 
 @hydra.main(config_path='../config', config_name='image_classification')
 def main(config):
     # construct logger, model, dataloaders
-    config, logger, tb_logger = startup(config)
+    config, logger = startup(config)
     train_loader, test_loader, train_splits = get_loaders(config)
+    tb_logger = SummaryWriter(log_dir=".")
     tb_logger.add_text("hypers/transforms", ''.join(config.augmentation.transforms_list), 0)
+    tb_logger.add_text("hypers/hydra_cfg", OmegaConf.to_yaml(config))
 
     if config.teacher.use_ckpts:
         try:

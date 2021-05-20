@@ -1,4 +1,3 @@
-# @package _group_
 init:
   _target_: torchvision.datasets.CIFAR100
   root: /datasets/cifar100

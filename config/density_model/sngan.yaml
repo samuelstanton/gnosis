@@ -1,4 +1,3 @@
-# @package _group_
 _target_: gnosis.models.SNGAN
 _recursive_: False
 name: sngan

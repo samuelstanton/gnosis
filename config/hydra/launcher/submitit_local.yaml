@@ -1,4 +1,3 @@
-# @package _group_
 _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.LocalLauncher
 submitit_folder: ${hydra.sweep.dir}/.submitit/%j
 timeout_min: 60

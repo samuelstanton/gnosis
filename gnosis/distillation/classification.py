@@ -178,6 +178,26 @@ class TeacherStudentFwdCrossEntLoss(object):
         return loss
 
 
+class TeacherStudentCvxCrossEnt(object):
+    def __init__(self, temp, T_max, beta=0.5):
+        self.hard_loss_fn = TeacherStudentHardCrossEntLoss(corruption_ratio=0.)
+        self.soft_loss_fn = TeacherStudentFwdCrossEntLoss(temp=temp)
+        self._init_beta = beta
+        self.beta = beta
+        self.t_max = T_max
+
+    def __call__(self, teacher_logits, student_logits, temp):
+        hard_loss = self.hard_loss_fn(teacher_logits, student_logits)
+        soft_loss = self.soft_loss_fn(teacher_logits, student_logits, temp)
+        cvx_loss = self.beta * hard_loss + (1 - self.beta) * soft_loss
+        return cvx_loss
+
+    def step(self):
+        next_beta = self.beta - self._init_beta / self.t_max
+        next_beta = max(next_beta, 0.)
+        self.beta = next_beta
+
+
 class TeacherStudentRevCrossEntLoss(object):
     """Soft teacher/student cross entropy loss from [Hinton et al (2015)]
         (https://arxiv.org/abs/1503.02531)

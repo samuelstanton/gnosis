@@ -1,4 +1,3 @@
-# @package _group_
 _target_: gnosis.models.DCGAN
 name: dcgan
 gen_weight_dir: data/experiments/image_generation/dcgan_${dataset.name}_v0.0.1

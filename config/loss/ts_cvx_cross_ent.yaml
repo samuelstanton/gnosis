@@ -1,0 +1,7 @@
+name: ts_cvx_cross_ent
+alpha: 0.0
+init:
+  _target_: gnosis.distillation.TeacherStudentCvxCrossEnt
+  temp: 1.
+  T_max: ${trainer.num_epochs}
+  beta: 1.0

@@ -1,4 +1,3 @@
-# @package _group_
 submitit_folder: ${hydra.sweep.dir}/.submitit/%j
 timeout_min: 60
 cpus_per_task: 4

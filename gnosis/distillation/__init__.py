@@ -9,6 +9,7 @@ from .classification import (
     SymmetrizedKLLoss,
     BrierLoss,
     AveragedSymmetrizedKLLoss,
+    TeacherStudentCvxCrossEnt,
 )
 
 
@@ -22,5 +23,6 @@ __all__ = [
     "TeacherStudentKLLoss",
     "SymmetrizedKLLoss",
     "BrierLoss",
-    "AveragedSymmetrizedKLLoss"
+    "AveragedSymmetrizedKLLoss",
+    "TeacherStudentCvxCrossEnt",
 ]

@@ -1,4 +1,3 @@
-# @package hydra.sweeper
 _target_: hydra_plugins.hydra_ax_sweeper.ax_sweeper.AxSweeper
 max_batch_size: null
 ax_config:

@@ -102,11 +102,13 @@ version: v0.0.11
 # Directories for loading and storing data
 project_dir: cwd
 data_dir: data/experiments/image_classification
-log_dir: ${data_dir}/${exp_name}/trial_${trial_id}/${now:%Y-%m-%d_%H-%M-%S}
 exp_name:
         "synth_aug_${distill_loader.synth_ratio}_${dataset.name}_\
          ts_soft_cross_ent_alpha_${loss.alpha}_temp_${distill_loader.temp}_v0.0.10/\
          preresnet${teacher.depth}_${teacher.num_components}-preresnet${classifier.depth}_1"
+job_name: null
+timestamp: ${now:%Y-%m-%d_%H-%M-%S}
+log_dir: data/experiments/${exp_name}/${job_name}/${timestamp}
 
 # Checkpointing
 ckpt_store: local

@@ -1,4 +1,3 @@
-# @package _group_
 name: brier
 alpha: 0.5
 init:

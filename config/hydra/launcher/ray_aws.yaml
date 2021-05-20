@@ -1,4 +1,3 @@
-# @package hydra.launcher
 _target_: hydra_plugins.hydra_ray_launcher.ray_aws_launcher.RayAWSLauncher
 env_setup:
   pip_packages:
@@ -11,22 +10,22 @@ env_setup:
   commands: []
 ray:
   init:
-    address:
+    address: auto
   remote:
     num_gpus: 0.2
   cluster:
     cluster_name: gnosis-cluster
     min_workers: 0
-    max_workers: 0
+    max_workers: 5
     initial_workers: 0
     autoscaling_mode: default
     target_utilization_fraction: 0.8
-    idle_timeout_minutes: 5
+    idle_timeout_minutes: 2
     docker:
       image: 'samuelstanton/gnosis:py3.8_cuda11'
       container_name: 'gnosis-container'
       pull_before_run: true
-      run_options: ["--gpus 'all'"]
+      run_options: ["--gpus='all' --shm-size=8g"]
     provider:
       type: aws
       region: us-east-2
@@ -39,23 +38,27 @@ ray:
     head_node:
       IamInstanceProfile:
         Arn: arn:aws:iam::312649332277:instance-profile/ray-head-v1
-      InstanceType: p3.8xlarge
-      ImageId: ami-08e16447bd5caf26a
+      InstanceType: p3.2xlarge
+      ImageId: ami-05dbf07a8f95e1073
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 200
+        SubnetIds:
+          - subnet-db16f7b0
     worker_nodes:
       IamInstanceProfile:
         Arn: arn:aws:iam::312649332277:instance-profile/ray-worker-v1
-      InstanceType: p3.xlarge
-      ImageId: ami-08e16447bd5caf26a
-    file_mounts: {}
-    initialization_commands: []
-    setup_commands: []
-    head_setup_commands: []
-    worker_setup_commands: []
-    head_start_ray_commands:
-      - ray stop
-      - ulimit -n 65536; ray start --head --port=6379 --object-manager-port=8076 --autoscaling-config=~/ray_bootstrap_config.yaml
-    worker_start_ray_commands:
-      - ray stop
-      - ulimit -n 65536; ray start --address=$RAY_HEAD_IP:6379 --object-manager-port=8076
-stop_cluster: true
+      InstanceType: p3.8xlarge
+      ImageId: ami-05dbf07a8f95e1073
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 200
+        SubnetIds:
+          - subnet-db16f7b0
+    setup_commands:
+      - python -m pip install -r requirements.txt
+      - python -m pip install -e .
+
 
