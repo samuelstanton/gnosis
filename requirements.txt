@@ -13,3 +13,4 @@ tqdm
 tensorboardX
 seaborn
 git+https://github.com/samuelstanton/upcycle.git@master
+hydra-ax-sweeper==1.1.0rc1

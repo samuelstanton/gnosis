@@ -94,7 +94,6 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
 
     lr_scheduler.step()
     if hasattr(loss_fn.base_loss, 'step'):
-        print(f'beta: {loss_fn.base_loss.beta}')
         loss_fn.base_loss.step()
     ece = expected_calibration_err(*ece_stats, num_samples=total)
     metrics = dict(
