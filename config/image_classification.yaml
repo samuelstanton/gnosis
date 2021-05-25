@@ -101,7 +101,7 @@ distill_loader:
 seed: ${trial_id}
 trial_id: 0
 project_name: gnosis
-version: v0.0.11
+version: v0.0.12
 
 # Directories for loading and storing data
 project_dir: cwd

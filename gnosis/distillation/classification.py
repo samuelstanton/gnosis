@@ -75,7 +75,7 @@ class BaseClassificationDistillationLoss(ABC):
 
     @staticmethod
     @abstractmethod
-    def teacher_student_loss(teacher_logits, student_logits):
+    def teacher_student_loss(teacher_logits, student_logits, temp):
         raise NotImplementedError
 
 
@@ -109,9 +109,9 @@ class BrierLoss(BaseClassificationDistillationLoss):
     Note: error is averaged both over the classes and data.
     """
     @staticmethod
-    def teacher_student_loss(teacher_logits, student_logits):
-        teacher_probs = F.softmax(teacher_logits, dim=-1)
-        student_probs = F.softmax(student_logits, dim=-1)
+    def teacher_student_loss(teacher_logits, student_logits, temp):
+        teacher_probs = F.softmax(teacher_logits / temp, dim=-1)
+        student_probs = F.softmax(student_logits / temp, dim=-1)
         return F.mse_loss(student_probs, teacher_probs)
 
 
@@ -139,7 +139,7 @@ class AveragedSymmetrizedKLLoss(BaseClassificationDistillationLoss):
         return kl + reversed_kl
 
 
-class TeacherStudentHardCrossEntLoss(BaseClassificationDistillationLoss):
+class TeacherStudentHardCrossEntLoss(object):
     """
     Standard cross-entropy loss w.r.t. the hard teacher labels
     """
@@ -147,7 +147,10 @@ class TeacherStudentHardCrossEntLoss(BaseClassificationDistillationLoss):
         super().__init__()
         self.corruption_ratio = corruption_ratio
 
-    def teacher_student_loss(self, teacher_logits, student_logits):
+    def __call__(self, teacher_logits, student_logits, temp):
+        if teacher_logits.dim() == 3:
+            teacher_logits = reduce_ensemble_logits(teacher_logits)
+
         batch_size, num_classes = teacher_logits.shape
         teacher_labels = torch.argmax(teacher_logits, dim=-1)
         num_corrupted = int(batch_size * self.corruption_ratio)
@@ -157,7 +160,12 @@ class TeacherStudentHardCrossEntLoss(BaseClassificationDistillationLoss):
             corrupt_idxs = torch.randint(0, batch_size, (num_corrupted,))
             teacher_labels[corrupt_idxs] = rand_labels
 
-        loss = F.cross_entropy(student_logits, teacher_labels)
+        student_logp = F.log_softmax(student_logits / temp, dim=-1)
+        student_logp = student_logp[torch.arange(batch_size), teacher_labels]
+        temp = temp[torch.arange(batch_size), teacher_labels]
+        loss = -(temp ** 2 * student_logp).mean()
+
+        # loss = F.cross_entropy(student_logits, teacher_labels)
         return loss
 
 
@@ -187,7 +195,7 @@ class TeacherStudentCvxCrossEnt(object):
         self.t_max = T_max
 
     def __call__(self, teacher_logits, student_logits, temp):
-        hard_loss = self.hard_loss_fn(teacher_logits, student_logits)
+        hard_loss = self.hard_loss_fn(teacher_logits, student_logits, temp)
         soft_loss = self.soft_loss_fn(teacher_logits, student_logits, temp)
         cvx_loss = self.beta * hard_loss + (1 - self.beta) * soft_loss
         return cvx_loss
