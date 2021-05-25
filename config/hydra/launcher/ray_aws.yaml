@@ -12,14 +12,15 @@ ray:
   init:
     address: auto
   remote:
-    num_gpus: 0.2
+    num_cpus: 2 
+    num_gpus: 0.25
   cluster:
     cluster_name: gnosis-cluster
     min_workers: 0
-    max_workers: 5
+    max_workers: 4
     initial_workers: 0
     autoscaling_mode: default
-    target_utilization_fraction: 0.8
+    target_utilization_fraction: 0.75
     idle_timeout_minutes: 2
     docker:
       image: 'samuelstanton/gnosis:py3.8_cuda11'
@@ -29,34 +30,32 @@ ray:
     provider:
       type: aws
       region: us-east-2
-      availability_zone: us-east-2a,us-east-2b
+      availability_zone: us-east-2b
       cache_stopped_nodes: false
-      key_pair:
-        key_name: hydra
     auth:
       ssh_user: ubuntu
     head_node:
       IamInstanceProfile:
         Arn: arn:aws:iam::312649332277:instance-profile/ray-head-v1
-      InstanceType: p3.2xlarge
+      InstanceType: p2.8xlarge
       ImageId: ami-05dbf07a8f95e1073
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeSize: 200
-        SubnetIds:
-          - subnet-db16f7b0
+      SubnetIds:
+        - subnet-7df0af07
     worker_nodes:
       IamInstanceProfile:
         Arn: arn:aws:iam::312649332277:instance-profile/ray-worker-v1
-      InstanceType: p3.8xlarge
+      InstanceType: p2.8xlarge
       ImageId: ami-05dbf07a8f95e1073
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeSize: 200
-        SubnetIds:
-          - subnet-db16f7b0
+      SubnetIds:
+        - subnet-7df0af07
     setup_commands:
       - python -m pip install -r requirements.txt
       - python -m pip install -e .
