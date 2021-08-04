@@ -1,0 +1,31 @@
+init:
+  _target_: torchvision.datasets.ImageFolder
+
+name: tiny_imagenet
+root_dir: /datasets/TinyImageNet
+num_classes: 200
+input_size: 64
+shuffle_train_targets:
+  enabled: False
+  seed: 0
+subsample:
+  ratio: 1.0
+  seed: 0
+  split: 0
+statistics:
+  mean_statistics:
+    - 0.4802
+    - 0.4481
+    - 0.3975
+  std_statistics:
+    - 0.2770
+    - 0.2691
+    - 0.2821
+  max:
+    - 1.0
+    - 1.0
+    - 1.0
+  min:
+    - 0.0
+    - 0.0
+    - 0.0
