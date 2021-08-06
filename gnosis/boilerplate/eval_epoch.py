@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 from upcycle.cuda import try_cuda
 from gnosis.distillation.classification import reduce_ensemble_logits
-from gnosis.utils.metrics import batch_calibration_stats, expected_calibration_err, ece_bin_metrics
+from gnosis.utils.metrics import batch_calibration_stats, expected_calibration_err, ece_bin_metrics, preact_cka
 from torch.distributions import Categorical
 from torch.distributions.kl import kl_divergence
 import torch.nn.functional as F
@@ -64,4 +64,8 @@ def eval_epoch(net, loader, epoch, loss_fn, teacher=None):
     metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='test'))
     if teacher is not None:
         metrics.update(dict(test_ts_agree=100. * agree / total, test_ts_kl=kl / len(loader)))
+    if teacher is not None and len(teacher.components) == 1:
+        cka = preact_cka(teacher.components[0], net, loader)
+        metrics.update({f'test_cka_{i}': val for i, val in enumerate(cka)})
+
     return metrics

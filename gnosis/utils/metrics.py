@@ -1,7 +1,9 @@
 import torch
 import torch.nn.functional as F
 from upcycle import cuda
+from cka.CKA import kernel_CKA
 import math
+import numpy as np
 
 
 def classifier_agreement(logits_1, logits_2):
@@ -70,3 +72,31 @@ def ece_bin_metrics(bin_count, bin_correct, bin_prob, num_bins, prefix):
         {f"{prefix}_bin_conf_{ub:0.2f}": conf for ub, conf in zip(bin_bounds, bin_conf)}
     )
     return metrics
+
+
+def preact_cka(teacher, student, dataloader):
+    """
+    https://github.com/yuanli2333/CKA-Centered-Kernel-Alignment/blob/master/CKA.ipynb
+    """
+    cka = None
+    for inputs, _ in dataloader:
+        inputs = cuda.try_cuda(inputs)
+        with torch.no_grad():
+            teacher_preacts = teacher.preacts(inputs)
+            student_preacts = student.preacts(inputs)
+
+        assert len(teacher_preacts) == len(student_preacts)
+        batch_cka = np.empty((len(teacher_preacts),))
+        for idx, (t_preact, s_preact) in enumerate(zip(teacher_preacts, student_preacts)):
+            t_preact = t_preact.cpu().numpy()  # [batch_size x resolution x resolution x channel_size]
+            s_preact = s_preact.cpu().numpy()  # [batch_size x resolution x resolution x channel_size]
+            avg_t_preact = np.mean(t_preact, axis=(1, 2))
+            avg_s_preact = np.mean(s_preact, axis=(1, 2))
+            batch_cka[idx] = kernel_CKA(avg_t_preact.T, avg_s_preact.T)
+
+        if cka is None:
+            cka = batch_cka / len(dataloader)
+        else:
+            cka += batch_cka / len(dataloader)
+
+    return cka

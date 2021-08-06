@@ -192,3 +192,11 @@ class PreResNet(nn.Module):
         x = self.fc(x)
 
         return x
+
+    def preacts(self, x):
+        x = self.conv1(x)
+        preacts = [self.layer1(x)] # 32x32
+        preacts.append(self.layer2(preacts[-1]))  # 16x16
+        preacts.append(self.layer3(preacts[-1]))  # 8x8
+
+        return preacts

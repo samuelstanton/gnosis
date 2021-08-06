@@ -10,27 +10,22 @@ from torch.utils.data import TensorDataset, DataLoader
 import random
 import os
 
+from torchvision.datasets.folder import ImageFolder
+
 
 def get_loaders(config):
     train_transform, test_transform = get_augmentation(config)
 
-    dataset_kwargs = dict(transform=train_transform)
     if config.dataset.name == 'tiny_imagenet':
-        dataset_kwargs['root'] = os.path.join(config.dataset.root_dir, 'train')
+        train_dataset = ImageFolder(root=os.path.join(config.dataset.root_dir, 'train'), transform=train_transform)
+        test_dataset = ImageFolder(root=os.path.join(config.dataset.root_dir, 'val'), transform=test_transform)
     else:
-        dataset_kwargs['train'] = True
+        train_dataset = hydra.utils.instantiate(config.dataset.init, train=True, transform=train_transform)
+        test_dataset = hydra.utils.instantiate(config.dataset.init, train=False, transform=test_transform)
 
-    train_dataset = hydra.utils.instantiate(config.dataset.init, **dataset_kwargs)
     if config.dataset.shuffle_train_targets.enabled:
         random.seed(config.dataset.shuffle_train_targets.seed)
         random.shuffle(train_dataset.targets)
-
-    dataset_kwargs = dict(transform=test_transform)
-    if config.dataset.name == 'tiny_imagenet':
-        dataset_kwargs['root'] = os.path.join(config.dataset.root_dir, 'val')
-    else:
-        dataset_kwargs['train'] = False
-    test_dataset = hydra.utils.instantiate(config.dataset.init, **dataset_kwargs)
 
     subsample_ratio = config.dataset.subsample.ratio
     if subsample_ratio < 1.0:
