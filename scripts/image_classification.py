@@ -48,8 +48,10 @@ def main(config):
         for i in range(num_ckpts, config.teacher.num_components):
             model = hydra.utils.instantiate(config.classifier)
             model = try_cuda(model)
+            logger.save_obj(model.state_dict(), f'teacher_init_{i}.ckpt')
+
+            print(f"==== training teacher model {i + 1} ====")
             teacher_loss = distillation.ClassifierTeacherLoss(model)
-            print(f"==== training teacher model {i+1} ====")
             model, records = train_loop(
                 config,
                 model,
@@ -97,9 +99,18 @@ def main(config):
         student = hydra.utils.instantiate(config.classifier)
         student = try_cuda(student)
 
-        if config.teacher.ckpt_init.enabled:
+        if config.teacher.ckpt_init.type == 'init':
             assert config.classifier.depth == config.teacher.depth
             assert config.teacher.num_components == 1
+            init_teachers = load_teachers(config, ckpt_pattern='*teacher_init_?.ckpt')
+            print('initializing the student near the initial teacher weights')
+            student = interpolate_net(student, init_teachers[0].state_dict(),
+                                      config.teacher.ckpt_init.loc_param, train_loader,
+                                      config.trainer.freeze_bn)
+        elif config.teacher.ckpt_init.type == 'final':
+            assert config.classifier.depth == config.teacher.depth
+            assert config.teacher.num_components == 1
+            print('initializing the student near the final teacher weights')
             student = interpolate_net(student, teachers[0].state_dict(),
                                       config.teacher.ckpt_init.loc_param, train_loader,
                                       config.trainer.freeze_bn)
@@ -110,7 +121,7 @@ def main(config):
             )
         logger.save_obj(student.state_dict(), 'student_init.ckpt')
 
-        train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
+        # train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
         student_base_loss = hydra.utils.instantiate(config.loss.init)
         student_loss = distillation.ClassifierStudentLoss(student, student_base_loss, config.loss.alpha)
 

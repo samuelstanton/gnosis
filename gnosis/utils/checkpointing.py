@@ -10,7 +10,7 @@ from upcycle.cuda import try_cuda
 from upcycle.checkpointing import s3_load_yaml, s3_load_obj
 
 
-def load_teachers(config, ckpt_pattern='*teacher_*.ckpt'):
+def load_teachers(config, ckpt_pattern='*teacher_?.ckpt'):
     if config.ckpt_store == 'local':
         proj_dir = get_proj_dir(config)
         ckpt_path = os.path.join(proj_dir, config.teacher.ckpt_dir)
@@ -32,7 +32,7 @@ def load_teachers(config, ckpt_pattern='*teacher_*.ckpt'):
         model = instantiate(teacher_cfg.classifier)
         model.load_state_dict(state_dict)
         teachers.append(try_cuda(model))
-    print(f'==== {len(teachers)} teacher checkpoint(s) loaded successfully ====')
+    print(f'==== {len(teachers)} teacher checkpoint(s) matching {ckpt_pattern} loaded successfully ====')
     return teachers
 
 
@@ -85,6 +85,7 @@ def get_proj_dir(config):
 
 def local_load_yaml(root_dir, glob_pattern):
     files = [f.as_posix() for f in Path(root_dir).rglob(glob_pattern)]
+    files.sort()
     if len(files) < 1:
         raise FileNotFoundError
     results = []
@@ -96,6 +97,7 @@ def local_load_yaml(root_dir, glob_pattern):
 
 def local_load_obj(root_dir, glob_pattern):
     files = [f.as_posix() for f in Path(root_dir).rglob(glob_pattern)]
+    files.sort()
     if len(files) < 1:
         raise FileNotFoundError
     results = []

@@ -56,7 +56,7 @@ teacher:
   num_components: 1
   use_ckpts: True
   ckpt_init:
-    enabled: False
+    type: null
     loc_param: 0.0
   shuffle_ckpts: False
   ckpt_dir:
@@ -106,7 +106,7 @@ version: v0.0.12
 # Directories for loading and storing data
 project_dir: cwd
 data_dir: data/experiments/image_classification
-exp_name: ts_cvx_cross_ent/${classifier.name}${classifier.depth}_${dataset.name}_${augmentation.normalization}
+exp_name: test/${classifier.name}${classifier.depth}_${dataset.name}_${augmentation.normalization}
 job_name: null
 timestamp: ${now:%Y-%m-%d_%H-%M-%S}
 log_dir: ${data_dir}/${exp_name}/${job_name}/${timestamp}
