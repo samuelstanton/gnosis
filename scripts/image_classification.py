@@ -104,9 +104,14 @@ def main(config):
             assert config.teacher.num_components == 1
             init_teachers = load_teachers(config, ckpt_pattern='*teacher_init_?.ckpt')
             print('initializing the student near the initial teacher weights')
-            student = interpolate_net(student, init_teachers[0].state_dict(),
+            start_idx = (config.trial_id * config.teacher.num_components) % len(init_teachers) - len(init_teachers)
+            stop_idx = start_idx + 1
+            print(f'using checkpoints {[(len(init_teachers) + i) % len(init_teachers) for i in range(start_idx, stop_idx)]}')
+
+            student = interpolate_net(student, init_teachers[start_idx].state_dict(),
                                       config.teacher.ckpt_init.loc_param, train_loader,
                                       config.trainer.freeze_bn)
+
         elif config.teacher.ckpt_init.type == 'final':
             assert config.classifier.depth == config.teacher.depth
             assert config.teacher.num_components == 1
@@ -119,6 +124,7 @@ def main(config):
                 config.trainer.optimizer.lr * config.teacher.ckpt_init.loc_param,
                 config.trainer.lr_scheduler.eta_min
             )
+
         logger.save_obj(student.state_dict(), 'student_init.ckpt')
 
         # train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
