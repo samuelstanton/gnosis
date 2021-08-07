@@ -15,11 +15,11 @@ def load_teachers(config, ckpt_pattern='*teacher_?.ckpt'):
         proj_dir = get_proj_dir(config)
         ckpt_path = os.path.join(proj_dir, config.teacher.ckpt_dir)
         ckpt_path = os.path.normpath(ckpt_path)
-        config_ckpts = local_load_yaml(ckpt_path, 'config.yaml')
-        weight_ckpts = local_load_obj(ckpt_path, ckpt_pattern)
+        config_ckpts, _ = local_load_yaml(ckpt_path, 'config.yaml')
+        weight_ckpts, weight_files = local_load_obj(ckpt_path, ckpt_pattern)
     elif config.ckpt_store == 's3':
-        config_ckpts = s3_load_yaml(config.s3_bucket, config.teacher.ckpt_dir, '*config.yaml')
-        weight_ckpts = s3_load_obj(config.s3_bucket, config.teacher.ckpt_dir, ckpt_pattern)
+        config_ckpts, _ = s3_load_yaml(config.s3_bucket, config.teacher.ckpt_dir, '*config.yaml')
+        weight_ckpts, weight_files = s3_load_obj(config.s3_bucket, config.teacher.ckpt_dir, ckpt_pattern)
     else:
         raise RuntimeError('unrecognized checkpoint store')
 
@@ -33,7 +33,7 @@ def load_teachers(config, ckpt_pattern='*teacher_?.ckpt'):
         model.load_state_dict(state_dict)
         teachers.append(try_cuda(model))
     print(f'==== {len(teachers)} teacher checkpoint(s) matching {ckpt_pattern} loaded successfully ====')
-    return teachers
+    return teachers, weight_files
 
 
 def load_generator(config):
@@ -92,7 +92,7 @@ def local_load_yaml(root_dir, glob_pattern):
     for file in files:
         with open(file, 'r') as f:
             results.append(yaml.full_load(f))
-    return results
+    return results, files
 
 
 def local_load_obj(root_dir, glob_pattern):
@@ -104,4 +104,17 @@ def local_load_obj(root_dir, glob_pattern):
     for file in files:
         with open(file, 'rb') as f:
             results.append(pkl.load(f))
-    return results
+    return results, files
+
+
+def select_ckpts(ckpts, trial_id, num_elements, ckpt_names=None):
+    start_idx = (trial_id * num_elements) % len(ckpts) - len(ckpts)
+    stop_idx = start_idx + num_elements
+    print(f'using checkpoints {[(len(ckpts) + i) % len(ckpts) for i in range(start_idx, stop_idx)]}')
+
+    if ckpt_names is not None:
+        assert len(ckpt_names) == len(ckpts)
+        for i in range(start_idx, stop_idx):
+            print(f'{(len(ckpts) + i) % len(ckpts)}: {ckpt_names[i]}')
+
+    return [ckpts[i] for i in range(start_idx, stop_idx)]
