@@ -1,0 +1,13 @@
+# @package _group_
+init:
+  _target_: torchtext.datasets.IMDB
+  root: /datasets/imdb
+
+name: imdb
+num_classes: 2
+subsample:
+  ratio: 1.0
+  seed: 0
+  split: 0
+min_freq: 10
+max_len: 100

@@ -12,6 +12,9 @@ import os
 
 from torchvision.datasets.folder import ImageFolder
 
+from torchtext.data.utils import get_tokenizer
+from torchtext.vocab import build_vocab_from_iterator
+
 
 def get_loaders(config):
     train_transform, test_transform = get_augmentation(config)
@@ -45,6 +48,54 @@ def get_loaders(config):
     test_loader = hydra.utils.instantiate(config.dataloader, dataset=test_dataset)
 
     return train_loader, test_loader, train_splits
+
+
+def get_text_loaders(config):
+    tokenizer = get_tokenizer('basic_english')
+    train_iter = hydra.utils.instantiate(config.dataset.init, split='train')
+
+    tokenizer = get_tokenizer('basic_english')
+
+    def yield_tokens(data_iter):
+        for _, text in data_iter:
+            yield tokenizer(text)
+    vocab = build_vocab_from_iterator(
+        yield_tokens(train_iter), min_freq=config.dataset.min_freq, specials=["<unk>"])
+    vocab.set_default_index(vocab["<unk>"])
+
+    text_pipeline = lambda x: vocab(tokenizer(x))
+    label_pipeline = lambda x: 0 if x == 'neg' else 1
+
+    def collate_batch(batch):
+        label_list, text_list, text_lens = [], [], []
+        for (_label, _text) in batch:
+            label_list.append(label_pipeline(_label))
+            processed_text = torch.tensor(text_pipeline(_text), dtype=torch.int64)
+            processed_text = processed_text[:config.dataset.max_len]
+            text_list.append(processed_text)
+            text_lens.append(processed_text.size(0))
+
+        text_list = torch.nn.utils.rnn.pad_sequence(text_list)
+        label_list = torch.tensor(label_list, dtype=torch.int64)
+        text_lens = torch.tensor(text_lens, dtype=torch.int64)
+        input_list = torch.cat([text_lens[None, :], text_list])
+        return input_list, label_list
+
+    train_dataset = hydra.utils.instantiate(config.dataset.init, split='train')
+    test_dataset = hydra.utils.instantiate(config.dataset.init, split='test')
+
+    subsample_ratio = config.dataset.subsample.ratio
+    if subsample_ratio < 1.0:
+        train_splits = split_dataset(train_dataset, subsample_ratio,
+                                     config.dataset.subsample.seed)
+        train_dataset = train_splits[config.dataset.subsample.split]
+    else:
+        train_splits = [train_dataset]
+
+    train_loader = hydra.utils.instantiate(config.dataloader, dataset=list(train_dataset), collate_fn=collate_batch)
+    test_loader = hydra.utils.instantiate(config.dataloader, dataset=list(test_dataset), collate_fn=collate_batch)
+
+    return train_loader, test_loader, train_splits, len(vocab)
 
 
 def split_dataset(dataset, ratio, seed=None):

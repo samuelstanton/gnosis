@@ -8,7 +8,7 @@ from torch.distributions.kl import kl_divergence
 import torch.nn.functional as F
 
 
-def eval_epoch(net, loader, epoch, loss_fn, teacher=None):
+def eval_epoch(net, loader, epoch, loss_fn, teacher=None, drop_synthetic_inputs=True):
     net.eval()
     test_loss = 0
     correct = 0
@@ -23,8 +23,11 @@ def eval_epoch(net, loader, epoch, loss_fn, teacher=None):
     prog_bar = tqdm(enumerate(loader), total=len(loader), desc=desc, leave=True)
     for batch_idx, batch in prog_bar:
         with torch.no_grad():
-            inputs, targets = try_cuda(batch[0], batch[1])
-            loss_args = [inputs[:targets.size(0)], targets]  # synthetic data won't be labeled
+            inputs, targets = try_cuda(*batch)
+            if drop_synthetic_inputs:
+                loss_args = [inputs[:targets.size(0)], targets]  # synthetic data won't be labeled
+            else:
+                loss_args = [inputs, targets]
             if teacher is not None:
                 teacher_logits = teacher(inputs)
                 teacher_logits = reduce_ensemble_logits(teacher_logits)
