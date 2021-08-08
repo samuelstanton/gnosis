@@ -3,6 +3,7 @@ from .ensemble import ClassifierEnsemble
 from .dcgan import DCGenerator, DCDiscriminator, DCGAN
 from .sngan import SNGAN
 from .lenet import make_lenet
+from .lstm import LSTM
 
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "DCGenerator",
     "DCDiscriminator",
     "SNGAN",
-    "DCGAN"
+    "DCGAN",
+    "LSTM"
 ]
