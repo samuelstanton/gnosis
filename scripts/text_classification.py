@@ -11,21 +11,24 @@ torch.backends.cudnn.enabled = False
 from gnosis import distillation, models
 from gnosis.boilerplate import train_loop, eval_epoch, supervised_epoch, distillation_epoch
 from gnosis.utils.data import get_text_loaders, save_logits, get_distill_loaders
-from gnosis.utils.checkpointing import load_teachers
-from gnosis.utils.scripting import startup
-from gnosis.models.preresnet import interpolate_net
+from gnosis.utils.checkpointing import load_teachers, load_generator, select_ckpts
+
+from upcycle.scripting import startup
+from tensorboardX import SummaryWriter
+from omegaconf import OmegaConf
 
 
 @hydra.main(config_path='../config', config_name='text_classification')
 def main(config):
     try:
         # construct logger, model, dataloaders
-        config, logger, tb_logger = startup(config)
+        config, logger = startup(config)
         train_loader, test_loader, train_splits, vocab_size = get_text_loaders(config)
+        tb_logger = SummaryWriter(log_dir=".")
 
         if config.teacher.use_ckpts:
             try:
-                teachers = load_teachers(config)
+                teachers, ckpt_files = load_teachers(config)
                 if config.teacher.shuffle_ckpts:
                     print('shuffling checkpoints')
                     random.shuffle(teachers)
@@ -33,10 +36,9 @@ def main(config):
                 teachers = []
             if len(teachers) >= config.teacher.num_components:
                 # use trial_id to determine which checkpoints are used
-                start_idx = (config.trial_id * config.teacher.num_components) % len(teachers) - len(teachers)
-                stop_idx = start_idx + config.teacher.num_components
-                print(f'using checkpoints {[(len(teachers) + i) % len(teachers) for i in range(start_idx, stop_idx)]}')
-                teachers = [try_cuda(teachers[i]) for i in range(start_idx, stop_idx)]
+                teachers = select_ckpts(teachers, config.trial_id, config.teacher.num_components, ckpt_names=ckpt_files)
+                teachers = [try_cuda(m) for m in teachers]
+                # teachers = [try_cuda(teachers[i]) for i in range(start_idx, stop_idx)]
         else:
             teachers = []
         num_ckpts = len(teachers)
@@ -44,8 +46,10 @@ def main(config):
         for i in range(num_ckpts, config.teacher.num_components):
             model = hydra.utils.instantiate(config.classifier, num_words=vocab_size)
             model = try_cuda(model)
+
+            logger.save_obj(model.state_dict(), f'teacher_init_{i}.ckpt')
+            print(f"==== training teacher model {i + 1} ====")
             teacher_loss = distillation.ClassifierTeacherLoss(model)
-            print(f"==== training teacher model {i+1} ====")
             model, records = train_loop(
                 config,
                 model,
@@ -82,9 +86,23 @@ def main(config):
         student = hydra.utils.instantiate(config.classifier)
         student = try_cuda(student)
 
-        if config.teacher.ckpt_init.enabled:
+        if config.teacher.ckpt_init.type == 'init':
             assert config.classifier.depth == config.teacher.depth
             assert config.teacher.num_components == 1
+            init_teachers, init_fnames = load_teachers(config, ckpt_pattern='*teacher_init_?.ckpt')
+            print('initializing the student near the initial teacher weights')
+            init_teachers = select_ckpts(init_teachers, config.trial_id, 1, ckpt_names=init_fnames)
+            # start_idx = (config.trial_id * config.teacher.num_components) % len(init_teachers) - len(init_teachers)
+            # stop_idx = start_idx + 1
+            # print(f'using checkpoints {[(len(init_teachers) + i) % len(init_teachers) for i in range(start_idx, stop_idx)]}')
+            student = interpolate_net(student, init_teachers[0].state_dict(),
+                                      config.teacher.ckpt_init.loc_param, train_loader,
+                                      config.trainer.freeze_bn)
+
+        elif config.teacher.ckpt_init.type == 'final':
+            assert config.classifier.depth == config.teacher.depth
+            assert config.teacher.num_components == 1
+            print('initializing the student near the final teacher weights')
             student = interpolate_net(student, teachers[0].state_dict(),
                                       config.teacher.ckpt_init.loc_param, train_loader,
                                       config.trainer.freeze_bn)
