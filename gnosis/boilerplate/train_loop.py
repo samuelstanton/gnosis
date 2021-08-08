@@ -3,7 +3,7 @@ from hydra.utils import instantiate
 
 def train_loop(config, student, train_closure, train_loader, train_kwargs,
                eval_closure, eval_loader, eval_kwargs, tb_logger, tb_prefix=""):
-    optimizer = instantiate(config.trainer.optimizer, params=student.parameters())
+    optimizer = instantiate(config.optimizer, params=student.parameters())
     lr_scheduler = instantiate(config.trainer.lr_scheduler, optimizer=optimizer)
 
     records = []
