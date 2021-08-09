@@ -28,7 +28,7 @@ def main(config):
 
         if config.teacher.use_ckpts:
             try:
-                teachers, ckpt_files = load_teachers(config)
+                teachers, ckpt_files = load_teachers(config, num_words=vocab_size)
                 if config.teacher.shuffle_ckpts:
                     print('shuffling checkpoints')
                     random.shuffle(teachers)
@@ -73,9 +73,8 @@ def main(config):
 
         print('==== ensembling teacher classifiers ====')
         teacher = models.ClassifierEnsemble(*teachers)
-        distill_splits = [train_splits[i] for i in config.distill_loader.splits]
-        distill_loader = hydra.utils.instantiate(config.distill_loader, teacher=teacher,
-                                                 datasets=distill_splits, synth_sampler=None)
+        # distill_splits = [train_splits[i] for i in config.distill_loader.splits]
+        distill_loader = hydra.utils.instantiate(config.distill_loader, loader=train_loader, teacher=teacher)
         teacher_train_metrics = eval_epoch(teacher, distill_loader, epoch=0,
                                            loss_fn=models.ensemble.ClassifierEnsembleLoss(teacher),
                                            drop_synthetic_inputs=False)
@@ -83,18 +82,19 @@ def main(config):
                                           loss_fn=models.ensemble.ClassifierEnsembleLoss(teacher),
                                           drop_synthetic_inputs=False)
 
-        student = hydra.utils.instantiate(config.classifier)
+        student = hydra.utils.instantiate(config.classifier, num_words=vocab_size)
         student = try_cuda(student)
 
         if config.teacher.ckpt_init.type == 'init':
             assert config.classifier.depth == config.teacher.depth
             assert config.teacher.num_components == 1
-            init_teachers, init_fnames = load_teachers(config, ckpt_pattern='*teacher_init_?.ckpt')
+            init_teachers, init_fnames = load_teachers(config, ckpt_pattern='*teacher_init_?.ckpt',
+                                                       num_words=vocab_size)
             print('initializing the student near the initial teacher weights')
             init_teachers = select_ckpts(init_teachers, config.trial_id, 1, ckpt_names=init_fnames)
-            # start_idx = (config.trial_id * config.teacher.num_components) % len(init_teachers) - len(init_teachers)
-            # stop_idx = start_idx + 1
-            # print(f'using checkpoints {[(len(init_teachers) + i) % len(init_teachers) for i in range(start_idx, stop_idx)]}')
+            start_idx = (config.trial_id * config.teacher.num_components) % len(init_teachers) - len(init_teachers)
+            stop_idx = start_idx + 1
+            print(f'using checkpoints {[(len(init_teachers) + i) % len(init_teachers) for i in range(start_idx, stop_idx)]}')
             student = interpolate_net(student, init_teachers[0].state_dict(),
                                       config.teacher.ckpt_init.loc_param, train_loader,
                                       config.trainer.freeze_bn)
@@ -113,7 +113,7 @@ def main(config):
             )
         logger.save_obj(student.state_dict(), 'student_init.ckpt')
 
-        train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
+        # train_loader, synth_loader = get_distill_loaders(config, train_loader, None)
         student_base_loss = hydra.utils.instantiate(config.loss.init)
         student_loss = distillation.ClassifierStudentLoss(student, student_base_loss, config.loss.alpha)
 
@@ -124,7 +124,7 @@ def main(config):
             train_closure=distillation_epoch,
             train_loader=distill_loader,
             train_kwargs=dict(loss_fn=student_loss, freeze_bn=config.trainer.freeze_bn),
-            eval_closure=eval_epoch,
+            eval_closure=partial(eval_epoch, drop_synthetic_inputs=False, with_cka=False),
             eval_loader=test_loader,
             eval_kwargs=dict(loss_fn=student_loss, teacher=teacher),
             tb_logger=tb_logger,
@@ -138,7 +138,7 @@ def main(config):
         logger.save_obj(student.state_dict(), f'student.ckpt')
 
         del train_loader, test_loader  # these will be regenerated w/o augmentation
-        save_logits(config, student, teacher, None, logger)
+        # save_logits(config, student, teacher, None, logger)
 
         return 1 - records[-1]['test_acc'] / 100.
 

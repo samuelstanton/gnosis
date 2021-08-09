@@ -81,8 +81,8 @@ def get_text_loaders(config):
         input_list = torch.cat([text_lens[None, :], text_list])
         return input_list, label_list
 
-    train_dataset = hydra.utils.instantiate(config.dataset.init, split='train')
-    test_dataset = hydra.utils.instantiate(config.dataset.init, split='test')
+    train_dataset = list(hydra.utils.instantiate(config.dataset.init, split='train'))
+    test_dataset = list(hydra.utils.instantiate(config.dataset.init, split='test'))
 
     subsample_ratio = config.dataset.subsample.ratio
     if subsample_ratio < 1.0:
@@ -92,8 +92,8 @@ def get_text_loaders(config):
     else:
         train_splits = [train_dataset]
 
-    train_loader = hydra.utils.instantiate(config.dataloader, dataset=list(train_dataset), collate_fn=collate_batch)
-    test_loader = hydra.utils.instantiate(config.dataloader, dataset=list(test_dataset), collate_fn=collate_batch)
+    train_loader = hydra.utils.instantiate(config.dataloader, dataset=train_dataset, collate_fn=collate_batch)
+    test_loader = hydra.utils.instantiate(config.dataloader, dataset=test_dataset, collate_fn=collate_batch)
 
     return train_loader, test_loader, train_splits, len(vocab)
 

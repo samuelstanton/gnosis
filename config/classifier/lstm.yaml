@@ -3,6 +3,6 @@ _target_: gnosis.models.LSTM
 name: lstm
 embedding_size: 128
 lstm_cell_size: 100
-num_layers: 1
+depth: 1
 bidirectional: True
 num_classes: ${dataset.num_classes}

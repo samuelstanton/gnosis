@@ -8,7 +8,7 @@ from torch.distributions.kl import kl_divergence
 import torch.nn.functional as F
 
 
-def eval_epoch(net, loader, epoch, loss_fn, teacher=None, drop_synthetic_inputs=True):
+def eval_epoch(net, loader, epoch, loss_fn, teacher=None, drop_synthetic_inputs=True, with_cka=True):
     net.eval()
     test_loss = 0
     correct = 0
@@ -23,7 +23,7 @@ def eval_epoch(net, loader, epoch, loss_fn, teacher=None, drop_synthetic_inputs=
     prog_bar = tqdm(enumerate(loader), total=len(loader), desc=desc, leave=True)
     for batch_idx, batch in prog_bar:
         with torch.no_grad():
-            inputs, targets = try_cuda(*batch)
+            inputs, targets = try_cuda(*batch[:2])
             if drop_synthetic_inputs:
                 loss_args = [inputs[:targets.size(0)], targets]  # synthetic data won't be labeled
             else:
@@ -71,7 +71,7 @@ def eval_epoch(net, loader, epoch, loss_fn, teacher=None, drop_synthetic_inputs=
 
     # add fidelity metrics
     metrics.update(dict(test_ts_agree=100. * agree / total, test_ts_kl=kl / len(loader)))
-    if len(teacher.components) == 1 and hasattr(teacher.components[0], 'preacts'):
+    if len(teacher.components) == 1 and hasattr(teacher.components[0], 'preacts') and with_cka:
         cka = preact_cka(teacher.components[0], net, loader)
         metrics.update({f'test_cka_{i}': val for i, val in enumerate(cka)})
 
