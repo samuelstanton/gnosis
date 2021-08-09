@@ -61,7 +61,7 @@ version: v0.0.12
 
 # Directories for loading and storing data
 project_dir: cwd
-data_dir: data/experiments/image_classification
+data_dir: data/experiments/text_classfication
 exp_name:
         "text_${dataset.name}\
          ts_soft_cross_ent_temp_${distill_loader.temp}_v0.0.10/\
