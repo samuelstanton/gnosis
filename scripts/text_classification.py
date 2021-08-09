@@ -11,7 +11,7 @@ torch.backends.cudnn.enabled = False
 from gnosis import distillation, models
 from gnosis.boilerplate import train_loop, eval_epoch, supervised_epoch, distillation_epoch
 from gnosis.utils.data import get_text_loaders, save_logits, get_distill_loaders
-from gnosis.utils.checkpointing import load_teachers, load_generator, select_ckpts
+from gnosis.utils.checkpointing import load_teachers, select_ckpts
 
 from upcycle.scripting import startup
 from tensorboardX import SummaryWriter

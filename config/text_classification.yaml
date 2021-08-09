@@ -17,7 +17,8 @@ teacher:
   shuffle_ckpts: False
   ckpt_dir:
             "data/experiments/text_classification/classifier_checkpoints/\
-            ${classifier.name}${teacher.depth}_${dataset.name}"
+            ${classifier.name}${teacher.depth}_${dataset.name}/\
+            lr${trainer.optimizer.lr}_wd${trainer.optimizer.weight_decay}"
 
 trainer:
   num_epochs: 300
@@ -62,9 +63,10 @@ version: v0.0.12
 project_dir: cwd
 data_dir: data/experiments/image_classification
 exp_name:
-        "text_${dataset.name}_\
+        "text_${dataset.name}\
          ts_soft_cross_ent_temp_${distill_loader.temp}_v0.0.10/\
-         lstm${teacher.depth}_${teacher.num_components}_lr${trainer.optimizer.lr}"
+         lstm${teacher.depth}_dir${classifier.bidirectional}_${teacher.num_components}/\
+         lr${trainer.optimizer.lr}_wd${trainer.optimizer.weight_decay}"
 job_name: null
 timestamp: ${now:%Y-%m-%d_%H-%M-%S}
 log_dir: ${data_dir}/${exp_name}/${job_name}/${timestamp}
