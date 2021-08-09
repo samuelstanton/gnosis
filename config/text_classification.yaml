@@ -56,8 +56,10 @@ version: v0.0.12
 project_dir: cwd
 data_dir: data/experiments/text_classification
 exp_name:
-        "lstm_${dataset.name}/lstm_${classifier.depth}_dir${classifier.bidirectional}_${teacher.num_components}/\
-         ts_soft_cross_ent_temp_${distill_loader.temp}/lr${trainer.optimizer.lr}_wd${trainer.optimizer.weight_decay}"
+        "rebuttal_student/lstm_${dataset.name}/\
+        lstm_${classifier.depth}_dir${classifier.bidirectional}_numteachers${teacher.num_components}/\
+        ts_soft_cross_ent_temp_${distill_loader.temp}/\
+        lr${trainer.optimizer.lr}_wd${trainer.optimizer.weight_decay}/${trial_id}"
 job_name: null
 timestamp: ${now:%Y-%m-%d_%H-%M-%S}
 log_dir: ${data_dir}/${exp_name}/${job_name}/${timestamp}
