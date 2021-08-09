@@ -1,6 +1,6 @@
 # @package _group_
 init:
-  _target_: torchtext.datasets.IMDB
+  _target_: gnosis.datasets.IMDB
   root: /datasets/imdb
 
 name: imdb
