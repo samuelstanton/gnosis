@@ -9,7 +9,10 @@ class LSTM(nn.Module):
         self.embed = nn.Embedding(num_words, embedding_size)
         self.bidir = bidirectional
         self.lstm = nn.LSTM(embedding_size, lstm_cell_size, num_layers, bidirectional=bidirectional)
-        self.linear = nn.Linear(lstm_cell_size, num_classes)
+        if self.bidir:
+            self.linear = nn.Linear(2*lstm_cell_size, num_classes)
+        else:
+            self.linear = nn.Linear(lstm_cell_size, num_classes)
 
     def forward(self, input):
         lengths, x = input[0], input[1:]
@@ -17,7 +20,7 @@ class LSTM(nn.Module):
         packed_embedded = nn.utils.rnn.pack_padded_sequence(x, lengths.cpu(), enforce_sorted=False)
         packed_output, (hidden, cell) = self.lstm(packed_embedded)
         if self.bidir:
-            out = self.linear(torch.cat([hidden[-2], hidden[-1]]))
+            out = self.linear(torch.cat([hidden[-2], hidden[-1]], dim=1))
         else:
             out = self.linear(hidden[-1])
         return out
