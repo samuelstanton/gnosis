@@ -48,7 +48,7 @@ def mixup_data(x, alpha):
 #             yield input_batch, target_batch, logit_batch
 
 
-def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha,
+def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch,
                        loss_fn, freeze_bn):
     student.train()
     if freeze_bn:
@@ -60,8 +60,6 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
     desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc : %.2f%% (%d/%d) | agree : %.2f%% (%d/%d)' %
             (epoch, get_lr(lr_scheduler), 0, 0, correct, total, 0, agree, total))
     num_batches = len(train_loader)
-    if mixup_alpha > 0 and loss_fn.alpha > 0:
-        raise NotImplementedError('Mixup not implemented for hard label distillation loss.')
 
     prog_bar = tqdm(enumerate(train_loader), total=num_batches, desc=desc, leave=True)
     for batch_idx, (inputs, targets, teacher_logits, temp) in prog_bar:

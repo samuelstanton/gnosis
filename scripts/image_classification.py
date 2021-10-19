@@ -88,6 +88,8 @@ def main(config):
         print('==== ensembling teacher classifiers ====')
         teacher = models.ClassifierEnsemble(*teachers)
         distill_splits = [train_splits[i] for i in config.distill_loader.splits]
+        if config.distill_loader.mixup_alpha > 0 and config.loss.alpha > 0:
+            raise NotImplementedError('Mixup not implemented for hard label distillation loss.')
         distill_loader = hydra.utils.instantiate(config.distill_loader, teacher=teacher,
                                                  datasets=distill_splits, synth_sampler=generator)
         teacher_train_metrics = eval_epoch(teacher, distill_loader, epoch=0,
