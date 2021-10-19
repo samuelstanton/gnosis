@@ -58,9 +58,9 @@ def main(config):
                 train_closure=supervised_epoch,
                 train_loader=train_loader,
                 train_kwargs=dict(loss_fn=teacher_loss),
-                eval_closure=partial(eval_epoch, drop_synthetic_inputs=False),
+                eval_closure=eval_epoch,
                 eval_loader=test_loader,
-                eval_kwargs=dict(loss_fn=teacher_loss),
+                eval_kwargs=dict(loss_fn=teacher_loss, drop_synthetic_inputs=False),
                 tb_logger=tb_logger,
                 tb_prefix="teachers/teacher_{}/".format(i)
             )
@@ -126,9 +126,10 @@ def main(config):
             train_closure=distillation_epoch,
             train_loader=distill_loader,
             train_kwargs=dict(loss_fn=student_loss),
-            eval_closure=partial(eval_epoch, drop_synthetic_inputs=False, with_cka=False),
+            eval_closure=eval_epoch,
             eval_loader=test_loader,
-            eval_kwargs=dict(loss_fn=student_loss, teacher=teacher),
+            eval_kwargs=dict(loss_fn=student_loss, teacher=teacher,
+                             drop_synthetic_inputs=False, with_cka=False),
             tb_logger=tb_logger,
             tb_prefix="student/",
         )
