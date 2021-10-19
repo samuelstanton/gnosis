@@ -22,34 +22,34 @@ def mixup_data(x, alpha):
     return mixed_x
 
 
-def make_generator(teacher, train_loader, synth_loader, mixup_alpha, mixup_portion):
-    if synth_loader is None:
-        for input_batch, target_batch in train_loader:
-            input_batch, target_batch = try_cuda(input_batch, target_batch)
-            if mixup_alpha > 0:
-                batch_size = input_batch.size(0)
-                num_mixup = int(np.ceil(mixup_portion * batch_size))
-                input_mixup = mixup_data(input_batch[:num_mixup], mixup_alpha)
-                input_batch = torch.cat((input_mixup, input_batch[num_mixup:]))
-            with torch.no_grad():
-                logit_batch = teacher(input_batch)
-                logit_batch = reduce_ensemble_logits(logit_batch)
-            yield input_batch, target_batch, logit_batch
-    else:
-        for real_batch, synth_batch in zip(train_loader, synth_loader):
-            real_batch = try_cuda(*real_batch)
-            synth_batch = try_cuda(*synth_batch)
-            with torch.no_grad():
-                real_logits = teacher(try_cuda(real_batch[0]))
-                real_logits = reduce_ensemble_logits(real_logits)
-                input_batch = torch.cat([real_batch[0], synth_batch[0]])
-                target_batch = real_batch[1]
-                logit_batch = torch.cat([real_logits, synth_batch[2]])
-            yield input_batch, target_batch, logit_batch
+# def make_generator(teacher, train_loader, synth_loader, mixup_alpha, mixup_portion):
+#     if synth_loader is None:
+#         for input_batch, target_batch in train_loader:
+#             input_batch, target_batch = try_cuda(input_batch, target_batch)
+#             if mixup_alpha > 0:
+#                 batch_size = input_batch.size(0)
+#                 num_mixup = int(np.ceil(mixup_portion * batch_size))
+#                 input_mixup = mixup_data(input_batch[:num_mixup], mixup_alpha)
+#                 input_batch = torch.cat((input_mixup, input_batch[num_mixup:]))
+#             with torch.no_grad():
+#                 logit_batch = teacher(input_batch)
+#                 logit_batch = reduce_ensemble_logits(logit_batch)
+#             yield input_batch, target_batch, logit_batch
+#     else:
+#         for real_batch, synth_batch in zip(train_loader, synth_loader):
+#             real_batch = try_cuda(*real_batch)
+#             synth_batch = try_cuda(*synth_batch)
+#             with torch.no_grad():
+#                 real_logits = teacher(try_cuda(real_batch[0]))
+#                 real_logits = reduce_ensemble_logits(real_logits)
+#                 input_batch = torch.cat([real_batch[0], synth_batch[0]])
+#                 target_batch = real_batch[1]
+#                 logit_batch = torch.cat([real_logits, synth_batch[2]])
+#             yield input_batch, target_batch, logit_batch
 
 
-def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha, mixup_portion,
-                       loss_fn, freeze_bn, teacher, synth_loader):
+def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha,
+                       loss_fn, freeze_bn):
     student.train()
     if freeze_bn:
         freeze_batchnorm(student)
@@ -62,9 +62,9 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
     num_batches = len(train_loader)
     if mixup_alpha > 0 and loss_fn.alpha > 0:
         raise NotImplementedError('Mixup not implemented for hard label distillation loss.')
-    batch_generator = make_generator(teacher, train_loader, synth_loader, mixup_alpha, mixup_portion)
-    prog_bar = tqdm(enumerate(batch_generator), total=num_batches, desc=desc, leave=True)
-    for batch_idx, (inputs, targets, teacher_logits) in prog_bar:
+
+    prog_bar = tqdm(enumerate(train_loader), total=num_batches, desc=desc, leave=True)
+    for batch_idx, (inputs, targets, teacher_logits, temp) in prog_bar:
         inputs, targets, teacher_logits = try_cuda(inputs, targets, teacher_logits)
         optimizer.zero_grad()
         loss, student_logits = loss_fn(inputs, targets, teacher_logits, temp)

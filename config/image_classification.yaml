@@ -48,10 +48,6 @@ augmentation:
     - horizontal_flip
   normalization: unitcube
 
-mixup:
-  alpha: 0.  # if alpha > 0, the mixup training is active
-  batch_portion: 1.
-
 teacher:
   depth: ${classifier.depth}
   num_components: 1
@@ -93,7 +89,8 @@ distill_loader:
   splits:
     - 0
   temp: 4.0
-  mixup_alpha: ${mixup.alpha}
+  mixup_alpha: 0. # if alpha > 0, the mixup training is active
+  mixup_portion: 1.
   batch_size: ${dataloader.batch_size}
   shuffle: True
   drop_last: False
