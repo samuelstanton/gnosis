@@ -1,3 +1,4 @@
+# @package _group_
 name: ts_fwd_cross_ent
 alpha: 0.0
 init:

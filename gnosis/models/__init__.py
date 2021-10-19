@@ -4,6 +4,7 @@ from .dcgan import DCGenerator, DCDiscriminator, DCGAN
 from .sngan import SNGAN
 from .lenet import make_lenet
 from .vgg import VGG
+from .lstm import LSTM
 
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "DCDiscriminator",
     "SNGAN",
     "DCGAN",
-    "VGG"
+    "VGG",
+    "LSTM",
 ]

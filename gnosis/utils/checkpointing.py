@@ -10,7 +10,7 @@ from upcycle.cuda import try_cuda
 from upcycle.checkpointing import s3_load_yaml, s3_load_obj
 
 
-def load_teachers(config, ckpt_pattern='*teacher_?.ckpt'):
+def load_teachers(config, ckpt_pattern='*teacher_?.ckpt', **init_kwargs):
     if config.ckpt_store == 'local':
         proj_dir = get_proj_dir(config)
         ckpt_path = os.path.join(proj_dir, config.teacher.ckpt_dir)
@@ -29,7 +29,7 @@ def load_teachers(config, ckpt_pattern='*teacher_?.ckpt'):
     assert teacher_cfg.classifier.depth == config.teacher.depth  # confirm checkpoints are correct depth
     teachers = []
     for state_dict in weight_ckpts:
-        model = instantiate(teacher_cfg.classifier)
+        model = instantiate(teacher_cfg.classifier, **init_kwargs)
         model.load_state_dict(state_dict)
         teachers.append(try_cuda(model))
     print(f'==== {len(teachers)} teacher checkpoint(s) matching {ckpt_pattern} loaded successfully ====')

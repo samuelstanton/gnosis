@@ -77,3 +77,26 @@ class DistillLoader(object):
 
             temp = cuda.try_cuda(torch.ones_like(logits) * self.temp)
             yield inputs, targets, logits, temp
+
+
+class DistillLoaderFromLoader(object):
+    def __init__(self, loader, teacher, temp, **kwargs):
+        self.teacher = teacher
+        self.temp = temp
+        self.loader = loader
+
+    def __len__(self):
+        return len(self.loader)
+
+    def __iter__(self):
+        return self.generator
+
+    @property
+    def generator(self):
+        for batch in self.loader:
+            inputs = cuda.try_cuda(batch[0])
+            targets = cuda.try_cuda(batch[1])
+            with torch.no_grad():
+                logits = reduce_ensemble_logits(self.teacher(inputs))
+            temp = cuda.try_cuda(torch.ones_like(logits) * self.temp)
+            yield inputs, targets, logits, temp
