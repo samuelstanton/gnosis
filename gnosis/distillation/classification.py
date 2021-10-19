@@ -143,18 +143,23 @@ class TeacherStudentHardCrossEntLoss(object):
     """
     Standard cross-entropy loss w.r.t. the hard teacher labels
     """
-    def __init__(self, corruption_ratio=0., **kwargs):
+    def __init__(self, corruption_ratio=0., mode='argmax', **kwargs):
         super().__init__()
         self.corruption_ratio = corruption_ratio
+        self.mode = mode
 
     def __call__(self, teacher_logits, student_logits, temp):
         if teacher_logits.dim() == 3:
             teacher_logits = reduce_ensemble_logits(teacher_logits)
 
         batch_size, num_classes = teacher_logits.shape
-        teacher_labels = torch.argmax(teacher_logits, dim=-1)
-        num_corrupted = int(batch_size * self.corruption_ratio)
+        if self.mode == 'argmax':
+            teacher_labels = torch.argmax(teacher_logits, dim=-1)
+        elif self.mode == 'sample':
+            teacher_dist = Categorical(logits=teacher_logits / temp)
+            teacher_labels = teacher_dist.sample()
 
+        num_corrupted = int(batch_size * self.corruption_ratio)
         if num_corrupted > 0:
             rand_labels = torch.randint(0, num_classes, (num_corrupted,), device=teacher_labels.device)
             corrupt_idxs = torch.randint(0, batch_size, (num_corrupted,))

@@ -3,3 +3,4 @@ alpha: 0.5
 init:
   _target_: gnosis.distillation.TeacherStudentHardCrossEntLoss
   corruption_ratio: 0.
+  mode: argmax
