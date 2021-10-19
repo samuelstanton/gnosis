@@ -61,10 +61,14 @@ def eval_epoch(net, loader, epoch, loss_fn, teacher=None):
         test_nll=nll / len(loader),
         epoch=epoch,
     )
-    # metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='test'))
-    if teacher is not None:
-        metrics.update(dict(test_ts_agree=100. * agree / total, test_ts_kl=kl / len(loader)))
-    if teacher is not None and len(teacher.components) == 1:
+
+    # only return generalization metrics
+    if teacher is None:
+        return metrics
+
+    # add fidelity metrics
+    metrics.update(dict(test_ts_agree=100. * agree / total, test_ts_kl=kl / len(loader)))
+    if len(teacher.components) == 1 and hasattr(teacher.components[0], 'preacts'):
         cka = preact_cka(teacher.components[0], net, loader)
         metrics.update({f'test_cka_{i}': val for i, val in enumerate(cka)})
 
