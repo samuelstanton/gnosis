@@ -22,12 +22,15 @@ def mixup_data(x, alpha):
     return mixed_x
 
 
-# def make_generator(teacher, train_loader, synth_loader, mixup_alpha):
+# def make_generator(teacher, train_loader, synth_loader, mixup_alpha, mixup_portion):
 #     if synth_loader is None:
 #         for input_batch, target_batch in train_loader:
 #             input_batch, target_batch = try_cuda(input_batch, target_batch)
 #             if mixup_alpha > 0:
-#                 input_batch = mixup_data(input_batch, mixup_alpha)
+#                 batch_size = input_batch.size(0)
+#                 num_mixup = int(np.ceil(mixup_portion * batch_size))
+#                 input_mixup = mixup_data(input_batch[:num_mixup], mixup_alpha)
+#                 input_batch = torch.cat((input_mixup, input_batch[num_mixup:]))
 #             with torch.no_grad():
 #                 logit_batch = teacher(input_batch)
 #                 logit_batch = reduce_ensemble_logits(logit_batch)
@@ -45,8 +48,8 @@ def mixup_data(x, alpha):
 #             yield input_batch, target_batch, logit_batch
 
 
-def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mixup_alpha, loss_fn,
-                       freeze_bn):
+def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch,
+                       loss_fn, freeze_bn):
     student.train()
     if freeze_bn:
         freeze_batchnorm(student)
@@ -57,11 +60,10 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
     desc = ('[distill] epoch: %d | lr: %.4f | loss: %.3f | acc : %.2f%% (%d/%d) | agree : %.2f%% (%d/%d)' %
             (epoch, get_lr(lr_scheduler), 0, 0, correct, total, 0, agree, total))
     num_batches = len(train_loader)
-    if mixup_alpha > 0 and loss_fn.alpha > 0:
-        raise NotImplementedError('Mixup not implemented for hard label distillation loss.')
 
     prog_bar = tqdm(enumerate(train_loader), total=num_batches, desc=desc, leave=True)
     for batch_idx, (inputs, targets, teacher_logits, temp) in prog_bar:
+        inputs, targets, teacher_logits = try_cuda(inputs, targets, teacher_logits)
         optimizer.zero_grad()
         loss, student_logits = loss_fn(inputs, targets, teacher_logits, temp)
         loss.backward()
@@ -105,5 +107,5 @@ def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch, mi
             lr=lr_scheduler.get_last_lr()[0],
             epoch=epoch
         )
-    metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='train'))
+    # metrics.update(ece_bin_metrics(*ece_stats, num_bins=10, prefix='train'))
     return metrics
