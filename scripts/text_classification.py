@@ -17,6 +17,8 @@ from upcycle.scripting import startup
 from tensorboardX import SummaryWriter
 from omegaconf import OmegaConf
 
+from gnosis.utils.initialization import interpolate_net
+
 
 @hydra.main(config_path='../config', config_name='text_classification')
 def main(config):
@@ -123,7 +125,7 @@ def main(config):
             student,
             train_closure=distillation_epoch,
             train_loader=distill_loader,
-            train_kwargs=dict(loss_fn=student_loss, freeze_bn=config.trainer.freeze_bn),
+            train_kwargs=dict(loss_fn=student_loss),
             eval_closure=partial(eval_epoch, drop_synthetic_inputs=False, with_cka=False),
             eval_loader=test_loader,
             eval_kwargs=dict(loss_fn=student_loss, teacher=teacher),
@@ -140,7 +142,7 @@ def main(config):
         del train_loader, test_loader  # these will be regenerated w/o augmentation
         # save_logits(config, student, teacher, None, logger)
 
-        return 1 - records[-1]['test_acc'] / 100.
+        return 1 - records[-1]['test_acc'] / 100. if len(records) > 0 else float('NaN')
 
     except Exception:
         logging.error(traceback.format_exc())

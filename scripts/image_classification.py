@@ -14,7 +14,7 @@ from upcycle.scripting import startup
 from tensorboardX import SummaryWriter
 from omegaconf import OmegaConf
 
-from gnosis.models.preresnet import interpolate_net
+from gnosis.utils.initialization import interpolate_net
 
 
 @hydra.main(config_path='../config', config_name='image_classification')
