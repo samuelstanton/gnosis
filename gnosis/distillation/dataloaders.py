@@ -15,7 +15,7 @@ def mixup_data(x, alpha):
 
 
 class DistillLoader(object):
-    def __init__(self, teacher, datasets, temp, mixup_alpha, batch_size, shuffle, drop_last,
+    def __init__(self, teacher, datasets, temp, mixup_alpha, mixup_portion, batch_size, shuffle, drop_last,
                  synth_ratio, synth_sampler=None, **kwargs):
         # if isinstance(temp, ListConfig):
         #     assert len(temp) == len(datasets)
@@ -24,6 +24,7 @@ class DistillLoader(object):
         self.teacher = teacher
         self.temp = temp
         self.mixup_alpha = mixup_alpha
+        self.mixup_portion = mixup_portion
         self.batch_size = batch_size
         if synth_ratio > 0:
             assert synth_sampler is not None
@@ -55,19 +56,24 @@ class DistillLoader(object):
     def generator(self):
         for batches in zip(*self.loaders):
             inputs = cuda.try_cuda(torch.cat([b[0] for b in batches]))
+
+            # mixup augmentation
+            if self.mixup_alpha > 0:
+                batch_size = inputs.size(0)
+                num_mixup = int(np.ceil(self.mixup_portion * batch_size))
+                input_mixup = mixup_data(inputs[:num_mixup], self.mixup_alpha)
+                inputs = torch.cat((input_mixup, inputs[num_mixup:]))
+
+            # synthetic augmentation
             if self.synth_ratio > 0:
                 synth_bs = int(self.synth_ratio * self.batch_size)
                 with torch.no_grad():
                     synth_inputs = self.synth_sampler.sample(synth_bs)
                 inputs = torch.cat([inputs, synth_inputs], dim=0)
-            if self.mixup_alpha > 0:
-                inputs = mixup_data(inputs, self.mixup_alpha)
+
             targets = cuda.try_cuda(torch.cat([b[1] for b in batches]))
             with torch.no_grad():
                 logits = reduce_ensemble_logits(self.teacher(inputs))
-            # temp = torch.cat([
-            #     torch.empty_like(b[1]).float().fill_(t) for b, t in zip(batches, self.temp)
-            # ])
-            # temp = cuda.try_cuda(temp)
+
             temp = cuda.try_cuda(torch.ones_like(logits) * self.temp)
             yield inputs, targets, logits, temp

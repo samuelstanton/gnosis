@@ -88,6 +88,8 @@ def main(config):
         print('==== ensembling teacher classifiers ====')
         teacher = models.ClassifierEnsemble(*teachers)
         distill_splits = [train_splits[i] for i in config.distill_loader.splits]
+        if config.distill_loader.mixup_alpha > 0 and config.loss.alpha > 0:
+            raise NotImplementedError('Mixup not implemented for hard label distillation loss.')
         distill_loader = hydra.utils.instantiate(config.distill_loader, teacher=teacher,
                                                  datasets=distill_splits, synth_sampler=generator)
         teacher_train_metrics = eval_epoch(teacher, distill_loader, epoch=0,
@@ -151,10 +153,11 @@ def main(config):
         logger.write_csv()
         logger.save_obj(student.state_dict(), f'student.ckpt')
 
-        del train_loader, test_loader  # these will be regenerated w/o augmentation
-        save_logits(config, student, teacher, generator, logger)
+        # del train_loader, test_loader  # these will be regenerated w/o augmentation
+        # save_logits(config, student, teacher, generator, logger)
 
-        return 1 - records[-1]['test_acc'] / 100.
+        res = 1 - records[-1]['test_acc'] / 100. if len(records) > 0 else float('NaN')
+        return res
 
     except Exception:
         logging.error(traceback.format_exc())
