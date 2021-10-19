@@ -153,8 +153,8 @@ def main(config):
         logger.write_csv()
         logger.save_obj(student.state_dict(), f'student.ckpt')
 
-        del train_loader, test_loader  # these will be regenerated w/o augmentation
-        save_logits(config, student, teacher, generator, logger)
+        # del train_loader, test_loader  # these will be regenerated w/o augmentation
+        # save_logits(config, student, teacher, generator, logger)
 
         res = 1 - records[-1]['test_acc'] / 100. if len(records) > 0 else float('NaN')
         return res
