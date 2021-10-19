@@ -9,7 +9,7 @@ def train_loop(config, student, train_closure, train_loader, train_kwargs,
     records = []
     eval_metrics = eval_closure(student, eval_loader, epoch=0, **eval_kwargs)
     records.append(eval_metrics)
-    for epoch in range(config.trainer.num_epochs):
+    for epoch in range(1, config.trainer.num_epochs + 1):
         metrics = {}
         train_metrics = train_closure(student, train_loader, optimizer,
                                       lr_scheduler, epoch, **train_kwargs)
@@ -18,7 +18,7 @@ def train_loop(config, student, train_closure, train_loader, train_kwargs,
         if epoch % config.trainer.eval_period < (config.trainer.eval_period - 1):
             continue
 
-        eval_metrics = eval_closure(student, eval_loader, **eval_kwargs)
+        eval_metrics = eval_closure(student, eval_loader, epoch=epoch, **eval_kwargs)
         metrics.update(eval_metrics)
         # csv logger
         records.append(metrics)
