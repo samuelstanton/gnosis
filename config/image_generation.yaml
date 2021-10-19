@@ -52,7 +52,7 @@ timestamp: ${now:%Y-%m-%d_%H-%M-%S}
 log_dir: data/experiments/${exp_name}/${job_name}/${timestamp}
 
 project_name: gnosis
-version: v0.0.7
+version: v0.0.13
 
 hydra:
   run:

@@ -49,7 +49,7 @@ def mixup_data(x, alpha):
 
 
 def distillation_epoch(student, train_loader, optimizer, lr_scheduler, epoch,
-                       loss_fn, freeze_bn):
+                       loss_fn, freeze_bn=False):
     student.train()
     if freeze_bn:
         freeze_batchnorm(student)
