@@ -17,10 +17,10 @@ def mixup_data(x, alpha):
 class DistillLoader(object):
     def __init__(self, teacher, datasets, temp, mixup_alpha, mixup_portion, batch_size, shuffle, drop_last,
                  synth_ratio, synth_sampler=None, **kwargs):
-        # if isinstance(temp, ListConfig):
-        #     assert len(temp) == len(datasets)
-        # if isinstance(temp, float):
-        #     temp = [temp] * len(datasets)
+        if isinstance(temp, ListConfig):
+            assert len(temp) == len(datasets)
+        if isinstance(temp, float):
+            temp = [temp] * len(datasets)
         self.teacher = teacher
         self.temp = temp
         self.mixup_alpha = mixup_alpha
@@ -75,7 +75,10 @@ class DistillLoader(object):
             with torch.no_grad():
                 logits = reduce_ensemble_logits(self.teacher(inputs))
 
-            temp = cuda.try_cuda(torch.ones_like(logits) * self.temp)
+            temp = torch.cat([
+                torch.ones(b[0].size(0), 1) * t for b, t in zip(batches, self.temp)
+            ])
+            temp = cuda.try_cuda(temp)
             yield inputs, targets, logits, temp
 
 

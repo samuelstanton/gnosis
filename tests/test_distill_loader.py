@@ -14,7 +14,10 @@ def test_distillation_loader():
     loader = DistillLoader(
         teacher=lambda x: x,
         datasets=datasets,
+        splits=[0],
         mixup_alpha=0.,
+        mixup_portion=1.,
+        synth_ratio=0.,
         temp=[1.0, 2.0],
         batch_size=batch_size,
         shuffle=False,

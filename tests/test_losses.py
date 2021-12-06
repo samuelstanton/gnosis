@@ -27,9 +27,9 @@ class TestClassificationDistillationLoss(unittest.TestCase):
         loss_fn = distillation.TeacherStudentKLLoss()
         exception_type = AssertionError
         with self.assertRaises(exception_type):
-            loss_fn(teacher_logits[:, :-1], student_logits)
+            loss_fn(teacher_logits[:-1], student_logits)
         with self.assertRaises(exception_type):
-            loss_fn(teacher_logits[:, :, :-1], student_logits)
+            loss_fn(teacher_logits[..., :-1], student_logits)
         with self.assertRaises(exception_type):
             loss_fn(teacher_logits, student_logits[:-1])
         with self.assertRaises(exception_type):
@@ -72,8 +72,10 @@ class TestClassificationDistillationLoss(unittest.TestCase):
         T = 0.5
         teacher_logits, teacher_ens_probs, student_logits, student_probs = (
             self._generate_logits_probs())
-        teacher_ens_probs_t = F.softmax(teacher_ens_probs.log() / T, dim=-1)
-        kl = self._get_kl(teacher_ens_probs_t, student_probs)
+        kl = self._get_kl(
+            F.softmax(teacher_ens_probs.log() / T, dim=-1),
+            F.softmax(student_probs.log() / T, dim=-1)
+        )
 
         loss_fn = distillation.TeacherStudentKLLoss()
         kl_gnosis = loss_fn(teacher_logits, student_logits, T)
@@ -104,13 +106,13 @@ class TestClassificationDistillationLoss(unittest.TestCase):
             self._generate_logits_probs())
 
         loss = 0.
-        for logits in teacher_logits:
+        for logits in teacher_logits.transpose(1, 0):
             probs = F.softmax(logits, dim=-1)
             kl = self._get_kl(probs, student_probs)
             reverse_kl = self._get_kl(student_probs, probs)
             loss += kl + reverse_kl
 
-        loss /= len(teacher_logits)
+        loss /= teacher_logits.size(1)
 
         loss_fn = distillation.AveragedSymmetrizedKLLoss()
         loss_gnosis = loss_fn(teacher_logits, student_logits)

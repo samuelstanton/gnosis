@@ -44,34 +44,28 @@ class BaseClassificationDistillationLoss(ABC):
     """Abstract class that defines interface for distillation losses.
     """
 
-    def __call__(self, teacher_logits, student_logits, teacher_temperature=1.):
+    def __call__(self, teacher_logits, student_logits, temp=1.):
         """Evaluate loss.
 
         :param teacher_logits: tensor of teacher model logits of size
             [num_teachers, batch_size, num_classes] or [batch_size, num_classes]
         :param student_logits: tensor of student model logits of size
             [batch_size, num_classes]
-        :param teacher_temperature: temperature to apply to the teacher logits
+        :param temp: temperature to apply to the teacher logits
         :return: scalar loss value
         """
         teacher_logits = self._reduce_teacher_predictions(teacher_logits)
-        teacher_logits = self._temper_predictions(teacher_logits,
-                                                  teacher_temperature)
         assert teacher_logits.shape == student_logits.shape, \
             "Shape mismatch: teacher logits" \
             "have shape {} and student logits have shape {}".format(
                     teacher_logits.shape, student_logits.shape)
-        return self.teacher_student_loss(teacher_logits, student_logits)
+        return self.teacher_student_loss(teacher_logits, student_logits, temp)
 
     @staticmethod
     def _reduce_teacher_predictions(teacher_logits):
         if len(teacher_logits.shape) == 3:
             return reduce_ensemble_logits(teacher_logits)
         return teacher_logits
-
-    @staticmethod
-    def _temper_predictions(teacher_logits, teacher_temperature=1.):
-        return teacher_logits / teacher_temperature
 
     @staticmethod
     @abstractmethod
@@ -83,9 +77,9 @@ class TeacherStudentKLLoss(BaseClassificationDistillationLoss):
     """KL loss between the teacher and student predictions.
     """
     @staticmethod
-    def teacher_student_loss(teacher_logits, student_logits):
-        teacher_dist = Categorical(logits=teacher_logits)
-        student_dist = Categorical(logits=student_logits)
+    def teacher_student_loss(teacher_logits, student_logits, temp):
+        teacher_dist = Categorical(logits=teacher_logits / temp)
+        student_dist = Categorical(logits=student_logits / temp)
 
         return kl_divergence(teacher_dist, student_dist).mean()
 
@@ -94,9 +88,9 @@ class SymmetrizedKLLoss(BaseClassificationDistillationLoss):
     """Symmetrized KL loss.
     """
     @staticmethod
-    def teacher_student_loss(teacher_logits, student_logits):
-        teacher_dist = Categorical(logits=teacher_logits)
-        student_dist = Categorical(logits=student_logits)
+    def teacher_student_loss(teacher_logits, student_logits, temp):
+        teacher_dist = Categorical(logits=teacher_logits / temp)
+        student_dist = Categorical(logits=student_logits / temp)
 
         kl_p_q = kl_divergence(teacher_dist, student_dist)
         kl_q_p = kl_divergence(student_dist, teacher_dist)
@@ -122,16 +116,15 @@ class AveragedSymmetrizedKLLoss(BaseClassificationDistillationLoss):
     the teacher models. This is the loss that we had implemented originally.
     """
 
-    def __call__(cls, teacher_logits, student_logits, teacher_temperature=1.):
-        # overwrite the __call__ method to not reduce the teacher logits
-        teacher_logits = cls._temper_predictions(teacher_logits,
-                                                 teacher_temperature)
-        return cls.teacher_student_loss(teacher_logits, student_logits)
+    def __call__(cls, teacher_logits, student_logits, temp=1.):
+        assert teacher_logits.size(0) == student_logits.size(0)
+        assert teacher_logits.size(-1) == student_logits.size(-1)
+        return cls.teacher_student_loss(teacher_logits.transpose(1, 0), student_logits, temp)
 
     @staticmethod
-    def teacher_student_loss(teacher_logits, student_logits):
-        teacher_dist = Categorical(logits=teacher_logits)
-        student_dist = Categorical(logits=student_logits)
+    def teacher_student_loss(teacher_logits, student_logits, temp):
+        teacher_dist = Categorical(logits=teacher_logits / temp)
+        student_dist = Categorical(logits=student_logits / temp)
 
         kl = kl_divergence(teacher_dist, student_dist).mean()
         reversed_kl = kl_divergence(student_dist, teacher_dist).mean()
@@ -169,8 +162,6 @@ class TeacherStudentHardCrossEntLoss(object):
         student_logp = student_logp[torch.arange(batch_size), teacher_labels]
         temp = temp[torch.arange(batch_size), teacher_labels]
         loss = -(temp ** 2 * student_logp).mean()
-
-        # loss = F.cross_entropy(student_logits, teacher_labels)
         return loss
 
 
@@ -178,10 +169,6 @@ class TeacherStudentFwdCrossEntLoss(object):
     """Soft teacher/student cross entropy loss from [Hinton et al (2015)]
         (https://arxiv.org/abs/1503.02531)
     """
-    def __init__(self, temp, **kwargs):
-        super().__init__()
-        self.temp = temp
-
     def __call__(self, teacher_logits, student_logits, temp):
         if teacher_logits.dim() == 3:
             teacher_logits = reduce_ensemble_logits(teacher_logits)
@@ -192,9 +179,9 @@ class TeacherStudentFwdCrossEntLoss(object):
 
 
 class TeacherStudentCvxCrossEnt(object):
-    def __init__(self, temp, T_max, beta=0.5):
+    def __init__(self, T_max, beta=0.5):
         self.hard_loss_fn = TeacherStudentHardCrossEntLoss(corruption_ratio=0.)
-        self.soft_loss_fn = TeacherStudentFwdCrossEntLoss(temp=temp)
+        self.soft_loss_fn = TeacherStudentFwdCrossEntLoss()
         self._init_beta = beta
         self.beta = beta
         self.t_max = T_max
@@ -215,10 +202,6 @@ class TeacherStudentRevCrossEntLoss(object):
     """Soft teacher/student cross entropy loss from [Hinton et al (2015)]
         (https://arxiv.org/abs/1503.02531)
     """
-    def __init__(self, temp, **kwargs):
-        super().__init__()
-        self.temp = temp
-
     def __call__(self, teacher_logits, student_logits, temp):
         if teacher_logits.dim() == 3:
             teacher_logits = reduce_ensemble_logits(teacher_logits)
