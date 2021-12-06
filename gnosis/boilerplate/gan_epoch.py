@@ -1,8 +1,9 @@
 from upcycle import cuda
 from tqdm import tqdm
-from oil.utils import metrics as oil_metrics
-from oil.utils.utils import dmap, LoaderTo
-from oil.model_trainers.gan import GanLoader
+from gnosis.utils import metrics as metric_utils
+from gnosis.utils.loaders import dmap, LoaderTo, GanLoader
+# from oil.utils.utils import dmap, LoaderTo
+# from oil.model_trainers.gan import GanLoader
 from torch.utils.data import DataLoader
 
 
@@ -47,12 +48,13 @@ def gan_train_epoch(gan_module, gen_opt, disc_opt, gen_lr_sched, disc_lr_sched,
                 break
     gan_module.eval()
 
-    metrics = dict(gen_loss=tot_gen_loss / num_batches, disc_loss=tot_disc_loss / num_batches)
+    metrics = dict(gen_loss=tot_gen_loss / num_batches, disc_loss=tot_disc_loss / num_batches,
+                   num_gen_updates=gen_update_count)
     # get FID and IS
     gan_loader = GanLoader(gan_module.generator, N=train_cfg.num_eval_samples, bs=batch_size)
     test_image_loader = DataLoader(dmap(lambda mb: mb[0], test_loader.dataset), batch_size=batch_size)
     test_image_loader = LoaderTo(test_image_loader, device=gan_module.generator.device)
-    fid_score, is_score = oil_metrics.FID_and_IS(gan_loader, test_image_loader)
+    fid_score, is_score = metric_utils.FID_and_IS(gan_loader, test_image_loader)
     metrics.update(dict(fid_score=float(fid_score), is_score=float(is_score)))
 
     return metrics

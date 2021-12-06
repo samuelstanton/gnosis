@@ -2,7 +2,7 @@ init:
   _target_: torchvision.datasets.ImageFolder
 
 name: tiny_imagenet
-root_dir: /datasets/tiny-imagenet-200
+root_dir: ${dataset_dir}/tiny-imagenet-200
 num_classes: 200
 input_size: 64
 shuffle_train_targets:

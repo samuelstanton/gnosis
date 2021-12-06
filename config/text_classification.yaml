@@ -3,11 +3,10 @@ defaults:
   - classifier: lstm
   - logger: local
   - loss: ts_fwd_cross_ent
-#  - override hydra/sweeper: basic
-#  - override hydra/launcher: basic
 
 
 teacher:
+  name: ${classifier.name}
   depth: ${classifier.depth}
   num_components: 1
   use_ckpts: True
@@ -15,9 +14,7 @@ teacher:
     type: null
     loc_param: 0.0
   shuffle_ckpts: False
-  ckpt_dir:
-            "data/experiments/text_classification/classifier_checkpoints/\
-            lstm_imdb/lstm2_dirTrue_1/lr${trainer.optimizer.lr}_wd${trainer.optimizer.weight_decay}"
+  ckpt_dir: "test/${teacher.name}${teacher.depth}_${dataset.name}"
 
 trainer:
   num_epochs: 100
@@ -50,15 +47,16 @@ mixup:
 seed: ${trial_id}
 trial_id: 0
 project_name: gnosis
-version: v0.0.13
+version: v0.1.0
 
 # Directories for loading and storing data
+dataset_dir: /datasets
 project_dir: cwd
 data_dir: data/experiments/text_classification
 exp_name: test/${classifier.name}${classifier.depth}_${dataset.name}
 job_name: null
 timestamp: ${now:%Y-%m-%d_%H-%M-%S}
-log_dir: ${data_dir}/${exp_name}/${job_name}/${timestamp}
+log_dir: ${data_dir}/${exp_name}
 
 # Checkpointing
 ckpt_store: local

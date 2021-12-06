@@ -1,7 +1,8 @@
 # @package _group_
 init:
   _target_: gnosis.datasets.IMDB
-  root: /datasets/imdb
+  root: ${dataset_dir}/imdb
+  download: False
 
 name: imdb
 num_classes: 2

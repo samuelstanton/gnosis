@@ -1,14 +1,14 @@
 _target_: gnosis.models.SNGAN
 _recursive_: False
 name: sngan
-weight_dir: data/experiments/image_generation/sngan_${dataset.name}_v0.0.5
+ckpt_dir: test/${density_model.name}_${dataset.name}_${version}
 gen_cfg:
-  _target_: oil.architectures.img_gen.resnetgan.Generator
+  _target_: gnosis.models.sngan.Generator
   img_channels: 3
   z_dim: 128
   k: 256
 disc_cfg:
-  _target_: oil.architectures.img_gen.resnetgan.Discriminator
+  _target_: gnosis.models.sngan.Discriminator
   img_channels: 3
   k: 128
   out_size: 1

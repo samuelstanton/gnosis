@@ -23,7 +23,7 @@ def main(config):
         # construct logger, model, dataloaders
         config, logger = startup(config)
         train_loader, test_loader, train_splits = get_loaders(config)
-        tb_logger = SummaryWriter(log_dir=".")
+        tb_logger = SummaryWriter(log_dir=f"./{config.job_name}/{config.timestamp}")
         tb_logger.add_text("hypers/transforms", ''.join(config.augmentation.transforms_list), 0)
         tb_logger.add_text("hypers/hydra_cfg", OmegaConf.to_yaml(config))
 

@@ -1,6 +1,6 @@
 _target_: gnosis.models.DCGAN
 name: dcgan
-gen_weight_dir: data/experiments/image_generation/dcgan_${dataset.name}_v0.0.1
+ckpt_dir: test/${density_model.name}_${dataset.name}_${version}
 gen_cfg:
   _target_: gnosis.models.DCGenerator
   nc: 3

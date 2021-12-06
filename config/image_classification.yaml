@@ -1,11 +1,9 @@
 defaults:
-  - dataset: cifar10
+  - dataset: cifar100
   - classifier: preresnet
   - density_model: sngan
   - logger: local
   - loss: ts_fwd_cross_ent
-#  - override hydra/sweeper: basic
-#  - override hydra/launcher: basic
 
 augmentation:
   random_apply:
@@ -49,6 +47,7 @@ augmentation:
   normalization: unitcube
 
 teacher:
+  name: ${classifier.name}
   depth: ${classifier.depth}
   num_components: 1
   use_ckpts: True
@@ -57,8 +56,7 @@ teacher:
     loc_param: 0.0
   shuffle_ckpts: False
   ckpt_dir:
-            "data/experiments/image_classification/classifier_checkpoints/\
-            ${classifier.name}${teacher.depth}_${dataset.name}_${augmentation.normalization}"
+            "test/${teacher.name}${teacher.depth}_${dataset.name}_${augmentation.normalization}"
 
 trainer:
   num_epochs: 300
@@ -99,19 +97,20 @@ distill_loader:
 seed: ${trial_id}
 trial_id: 0
 project_name: gnosis
-version: v0.0.13
+version: v0.1.0
 
 # Directories for loading and storing data
+dataset_dir: /datasets
 project_dir: cwd
 data_dir: data/experiments/image_classification
 exp_name: test/${classifier.name}${classifier.depth}_${dataset.name}_${augmentation.normalization}
 job_name: null
 timestamp: ${now:%Y-%m-%d_%H-%M-%S}
-log_dir: ${data_dir}/${exp_name}/${job_name}/${timestamp}
+log_dir: ${data_dir}/${exp_name}
 
 # Checkpointing
 ckpt_store: local
-s3_bucket: samuel-stanton-personal-bucket
+s3_bucket: null
 
 hydra:
   run:

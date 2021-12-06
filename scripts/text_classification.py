@@ -26,7 +26,7 @@ def main(config):
         # construct logger, model, dataloaders
         config, logger = startup(config)
         train_loader, test_loader, train_splits, vocab_size = get_text_loaders(config)
-        tb_logger = SummaryWriter(log_dir=".")
+        tb_logger = SummaryWriter(log_dir=f"./{config.job_name}/{config.timestamp}")
 
         if config.teacher.use_ckpts:
             try:

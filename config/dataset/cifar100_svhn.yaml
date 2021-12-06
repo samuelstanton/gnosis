@@ -1,6 +1,6 @@
 init:
   _target_: gnosis.datasets.make_cifar100_svhn
-  root: /datasets/cifar100_svhn
+  root: ${dataset_dir}/cifar100_svhn
   download: True
   num_svhn_data: 10000
   seed: 0

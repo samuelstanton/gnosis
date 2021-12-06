@@ -11,15 +11,16 @@ from upcycle.checkpointing import s3_load_yaml, s3_load_obj
 
 
 def load_teachers(config, ckpt_pattern='*teacher_?.ckpt', **init_kwargs):
+    ckpt_path = os.path.join(config.data_dir, config.teacher.ckpt_dir)
     if config.ckpt_store == 'local':
         proj_dir = get_proj_dir(config)
-        ckpt_path = os.path.join(proj_dir, config.teacher.ckpt_dir)
+        ckpt_path = os.path.join(proj_dir, ckpt_path)
         ckpt_path = os.path.normpath(ckpt_path)
         config_ckpts, _ = local_load_yaml(ckpt_path, 'config.yaml')
         weight_ckpts, weight_files = local_load_obj(ckpt_path, ckpt_pattern)
     elif config.ckpt_store == 's3':
-        config_ckpts, _ = s3_load_yaml(config.s3_bucket, config.teacher.ckpt_dir, '*config.yaml')
-        weight_ckpts, weight_files = s3_load_obj(config.s3_bucket, config.teacher.ckpt_dir, ckpt_pattern)
+        config_ckpts, _ = s3_load_yaml(config.s3_bucket, ckpt_path, '*config.yaml')
+        weight_ckpts, weight_files = s3_load_obj(config.s3_bucket, ckpt_path, ckpt_pattern)
     else:
         raise RuntimeError('unrecognized checkpoint store')
 
@@ -37,15 +38,16 @@ def load_teachers(config, ckpt_pattern='*teacher_?.ckpt', **init_kwargs):
 
 
 def load_generator(config):
+    ckpt_path = os.path.join(config.data_dir, config.density_model.ckpt_dir)
     if config.ckpt_store == 'local':
         proj_dir = get_proj_dir(config)
-        ckpt_path = os.path.join(proj_dir, config.density_model.weight_dir)
+        ckpt_path = os.path.join(proj_dir, ckpt_path)
         ckpt_path = os.path.normpath(ckpt_path)
         config_ckpts = local_load_yaml(ckpt_path, 'config.yaml')
         weight_ckpts = local_load_obj(ckpt_path, '*generator_500.ckpt')
     elif config.ckpt_store == 's3':
-        config_ckpts = s3_load_yaml(config.s3_bucket, config.density_model.weight_dir, '*config.yaml')
-        weight_ckpts = s3_load_obj(config.s3_bucket, config.density_model.weight_dir, '*generator_500.ckpt')
+        config_ckpts = s3_load_yaml(config.s3_bucket, ckpt_path, '*config.yaml')
+        weight_ckpts = s3_load_obj(config.s3_bucket, ckpt_path, '*generator_500.ckpt')
     else:
         raise RuntimeError('unrecognized checkpoint store')
 

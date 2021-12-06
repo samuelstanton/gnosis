@@ -1,0 +1,6 @@
+# @package _group_
+name: ts_rev_cross_ent
+alpha: 0.0
+init:
+  _target_: gnosis.distillation.TeacherStudentRevCrossEntLoss
+  temp: 1.

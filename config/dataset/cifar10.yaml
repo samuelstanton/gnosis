@@ -1,6 +1,6 @@
 init:
   _target_: torchvision.datasets.CIFAR10
-  root: /datasets/cifar10
+  root: ${dataset_dir}/cifar10
   download: True
 
 name: cifar10

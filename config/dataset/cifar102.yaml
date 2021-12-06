@@ -1,6 +1,6 @@
 init:
   _target_: gnosis.datasets.CIFAR102
-  root: /datasets/cifar10_2
+  root: ${dataset_dir}/cifar10_2
   download: True
   cifar10_fraction: 1.
 
