@@ -46,8 +46,6 @@ trainer.distill_teacher=False trial_id=0,1,2`
 ## (Optional) train a generative model for synthetic data augmentation
 
 To perform synthetic data augmentation you'll first need to train a GAN checkpoint.
-The SN-GAN implementation and evaluation is copied from 
-[here](https://github.com/mfinzi/olive-oil-ml/blob/master/oil/architectures/img_gen/resnetgan.py).
 
 `python scripts/image_generation.py`
 
@@ -103,3 +101,8 @@ If you make use of any part of the code, please cite
   year={2021}
 }
 ```
+
+The SN-GAN implementation and evaluation is copied from 
+[here](https://github.com/mfinzi/olive-oil-ml/blob/master/oil/architectures/img_gen/resnetgan.py).
+
+The CKA implementation is copied from [here](https://github.com/yuanli2333/CKA-Centered-Kernel-Alignment).
