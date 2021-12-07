@@ -50,7 +50,7 @@ project_name: gnosis
 version: v0.1.0
 
 # Directories for loading and storing data
-dataset_dir: /datasets
+dataset_dir: data/datasets
 project_dir: cwd
 data_dir: data/experiments/text_classification
 exp_name: test/${classifier.name}${classifier.depth}_${dataset.name}

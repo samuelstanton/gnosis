@@ -2,7 +2,7 @@
 init:
   _target_: gnosis.datasets.IMDB
   root: ${dataset_dir}/imdb
-  download: False
+  download: True
 
 name: imdb
 num_classes: 2

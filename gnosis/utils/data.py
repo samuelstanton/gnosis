@@ -19,9 +19,16 @@ from torchtext.vocab import build_vocab_from_iterator
 def get_loaders(config):
     train_transform, test_transform = get_augmentation(config)
     if config.dataset.name == 'tiny_imagenet':
-        train_dataset = ImageFolder(root=os.path.join(config.dataset.root_dir, 'train'), transform=train_transform)
-        test_dataset = ImageFolder(root=os.path.join(config.dataset.root_dir, 'val'), transform=test_transform)
+        train_dataset = ImageFolder(
+            root=os.path.join(hydra.utils.get_original_cwd(), config.dataset.root_dir, 'train'),
+            transform=train_transform
+        )
+        test_dataset = ImageFolder(
+            root=os.path.join(hydra.utils.get_original_cwd(), config.dataset.root_dir, 'val'),
+            transform=test_transform
+        )
     else:
+        config.dataset.init.root = os.path.join(hydra.utils.get_original_cwd(), config.dataset.init.root)
         train_dataset = hydra.utils.instantiate(config.dataset.init, train=True, transform=train_transform)
         test_dataset = hydra.utils.instantiate(config.dataset.init, train=False, transform=test_transform)
 

@@ -45,7 +45,7 @@ augmentation:
 seed:
 trial_id: 0
 
-dataset_dir: /datasets
+dataset_dir: data/datasets
 data_dir: data/experiments/image_generation
 exp_name: test/${density_model.name}_${dataset.name}_${version}
 job_name: null
