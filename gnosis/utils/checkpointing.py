@@ -38,16 +38,17 @@ def load_teachers(config, ckpt_pattern='*teacher_?.ckpt', **init_kwargs):
 
 
 def load_generator(config):
-    ckpt_path = os.path.join(config.data_dir, config.density_model.ckpt_dir)
+    data_dir = 'data/experiments/image_generation'
+    ckpt_path = os.path.join(data_dir, config.density_model.ckpt_dir)
     if config.ckpt_store == 'local':
         proj_dir = get_proj_dir(config)
         ckpt_path = os.path.join(proj_dir, ckpt_path)
         ckpt_path = os.path.normpath(ckpt_path)
-        config_ckpts = local_load_yaml(ckpt_path, 'config.yaml')
-        weight_ckpts = local_load_obj(ckpt_path, '*generator_500.ckpt')
+        config_ckpts, _ = local_load_yaml(ckpt_path, 'config.yaml')
+        weight_ckpts, weight_files = local_load_obj(ckpt_path, config.density_model.ckpt_pattern)
     elif config.ckpt_store == 's3':
-        config_ckpts = s3_load_yaml(config.s3_bucket, ckpt_path, '*config.yaml')
-        weight_ckpts = s3_load_obj(config.s3_bucket, ckpt_path, '*generator_500.ckpt')
+        config_ckpts, _ = s3_load_yaml(config.s3_bucket, ckpt_path, '*config.yaml')
+        weight_ckpts, weight_files = s3_load_obj(config.s3_bucket, ckpt_path, config.density_model.ckpt_pattern)
     else:
         raise RuntimeError('unrecognized checkpoint store')
 
@@ -58,23 +59,7 @@ def load_generator(config):
         model.load_state_dict(state_dict)
         generators.append(try_cuda(model))
     print(f'==== {len(generators)} generator checkpoint(s) loaded successfully ====')
-    return generators
-
-    # print('==== loading generator checkpoint ====')
-    # generator = hydra.utils.instantiate(config.density_model.gen_cfg)
-    # proj_dir = get_proj_dir(config)
-    # weight_dir = os.path.join(proj_dir, config.density_model.gen_weight_dir)
-    # search_pattern = '*generator_500.ckpt'
-    # print(f'searching in {weight_dir}')
-    # ckpt_files = Path(weight_dir).rglob(search_pattern)
-    # ckpt_files = [f.as_posix() for f in ckpt_files]
-    # if len(ckpt_files) < 1:
-    #     raise RuntimeError(f'no checkpoints matching {search_pattern} found.')
-    # with open(ckpt_files[0], 'rb') as f:
-    #     state_dict = pkl.load(f)
-    # generator.load_state_dict(state_dict)
-    # print('==== generator checkpoint loaded successfully ====')
-    # return try_cuda(generator)
+    return generators, weight_files
 
 
 def get_proj_dir(config):

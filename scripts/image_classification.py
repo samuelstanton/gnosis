@@ -1,13 +1,12 @@
 import hydra
 from upcycle.cuda import try_cuda
 import random
-import math
 import logging
 import traceback
 
 from gnosis import distillation, models
 from gnosis.boilerplate import train_loop, eval_epoch, supervised_epoch, distillation_epoch
-from gnosis.utils.data import get_loaders, make_synth_teacher_data, save_logits, get_distill_loaders
+from gnosis.utils.data import get_loaders
 from gnosis.utils.checkpointing import load_teachers, load_generator, select_ckpts
 
 from upcycle.scripting import startup
@@ -39,7 +38,6 @@ def main(config):
                 # use trial_id to determine which checkpoints are used
                 teachers = select_ckpts(teachers, config.trial_id, config.teacher.num_components, ckpt_names=ckpt_files)
                 teachers = [try_cuda(m) for m in teachers]
-                # teachers = [try_cuda(teachers[i]) for i in range(start_idx, stop_idx)]
         else:
             teachers = []
         num_ckpts = len(teachers)
@@ -75,15 +73,8 @@ def main(config):
         generator = None
         if config.distill_loader.synth_ratio > 0:
             assert config.augmentation.normalization == 'unitcube'  # GANs use Tanh activations when sampling
-            generator = load_generator(config)[0]
-            # config.trainer.num_epochs = math.ceil(
-            #     config.trainer.num_epochs * (1 - config.distill_loader.synth_ratio)
-            # )
-            # config.trainer.eval_period = math.ceil(
-            #     config.trainer.eval_period * (1 - config.distill_loader.synth_ratio)
-            # )
-            # config.trainer.lr_scheduler.T_max = config.trainer.num_epochs
-            # print(f'[info] adjusting num_epochs to {config.trainer.num_epochs}')
+            generators, ckpt_files = load_generator(config)
+            generator = select_ckpts(generators, config.trial_id, 1, ckpt_names=ckpt_files)[0]
 
         print('==== ensembling teacher classifiers ====')
         teacher = models.ClassifierEnsemble(*teachers)
@@ -106,10 +97,6 @@ def main(config):
             init_teachers, init_fnames = load_teachers(config, ckpt_pattern='*teacher_init_?.ckpt')
             print('initializing the student near the initial teacher weights')
             init_teachers = select_ckpts(init_teachers, config.trial_id, 1, ckpt_names=init_fnames)
-            # start_idx = (config.trial_id * config.teacher.num_components) % len(init_teachers) - len(init_teachers)
-            # stop_idx = start_idx + 1
-            # print(f'using checkpoints {[(len(init_teachers) + i) % len(init_teachers) for i in range(start_idx, stop_idx)]}')
-
             student = interpolate_net(student, init_teachers[0].state_dict(),
                                       config.teacher.ckpt_init.loc_param, train_loader,
                                       config.trainer.freeze_bn)
@@ -152,9 +139,6 @@ def main(config):
         logger.add_table(f'student_train_metrics', records)
         logger.write_csv()
         logger.save_obj(student.state_dict(), f'student.ckpt')
-
-        # del train_loader, test_loader  # these will be regenerated w/o augmentation
-        # save_logits(config, student, teacher, generator, logger)
 
         res = 1 - records[-1]['test_acc'] / 100. if len(records) > 0 else float('NaN')
         return res

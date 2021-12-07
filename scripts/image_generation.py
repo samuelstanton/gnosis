@@ -45,9 +45,9 @@ def main(config):
         logger.write_csv()
         if gen_update_count % config.trainer.checkpoint_period == 0:
             logger.save_obj(gan.generator.state_dict(),
-                            f'{config.dataset.name}_generator_{gen_update_count}.ckpt')
+                            f'generator_{gen_update_count}.ckpt')
             logger.save_obj(gan.discriminator.state_dict(),
-                            f'{config.dataset.name}_discriminator_{gen_update_count}.ckpt')
+                            f'discriminator_{gen_update_count}.ckpt')
 
 
 if __name__ == '__main__':

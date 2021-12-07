@@ -16,20 +16,24 @@ def mixup_data(x, alpha):
 
 class DistillLoader(object):
     def __init__(self, teacher, datasets, temp, mixup_alpha, mixup_portion, batch_size, shuffle, drop_last,
-                 synth_ratio, synth_sampler=None, **kwargs):
+                 synth_ratio, synth_sampler=None, synth_temp=1., **kwargs):
         if isinstance(temp, ListConfig):
             assert len(temp) == len(datasets)
         if isinstance(temp, float):
             temp = [temp] * len(datasets)
+        if synth_ratio > 0:
+            assert synth_sampler is not None
+            temp.append(synth_temp)
+
         self.teacher = teacher
         self.temp = temp
         self.mixup_alpha = mixup_alpha
         self.mixup_portion = mixup_portion
         self.batch_size = batch_size
-        if synth_ratio > 0:
-            assert synth_sampler is not None
+
         self.synth_ratio = synth_ratio
         self.synth_sampler = synth_sampler
+        self.synth_temp = synth_temp
         self.loaders = self._make_loaders(datasets, batch_size, shuffle, drop_last)
 
     def __len__(self):
@@ -55,7 +59,9 @@ class DistillLoader(object):
     @property
     def generator(self):
         for batches in zip(*self.loaders):
+            bs_list = [b[0].size(0) for b in batches]
             inputs = cuda.try_cuda(torch.cat([b[0] for b in batches]))
+            targets = cuda.try_cuda(torch.cat([b[1] for b in batches]))
 
             # mixup augmentation
             if self.mixup_alpha > 0:
@@ -67,16 +73,17 @@ class DistillLoader(object):
             # synthetic augmentation
             if self.synth_ratio > 0:
                 synth_bs = int(self.synth_ratio * self.batch_size)
+                bs_list.append(synth_bs)
                 with torch.no_grad():
                     synth_inputs = self.synth_sampler.sample(synth_bs)
                 inputs = torch.cat([inputs, synth_inputs], dim=0)
 
-            targets = cuda.try_cuda(torch.cat([b[1] for b in batches]))
             with torch.no_grad():
                 logits = reduce_ensemble_logits(self.teacher(inputs))
 
+            assert len(bs_list) == len(self.temp)
             temp = torch.cat([
-                torch.ones(b[0].size(0), 1) * t for b, t in zip(batches, self.temp)
+                torch.ones(bs, 1) * t for bs, t in zip(bs_list, self.temp)
             ])
             temp = cuda.try_cuda(temp)
             yield inputs, targets, logits, temp

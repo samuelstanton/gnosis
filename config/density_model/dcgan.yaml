@@ -1,6 +1,7 @@
 _target_: gnosis.models.DCGAN
 name: dcgan
 ckpt_dir: test/${density_model.name}_${dataset.name}_${version}
+ckpt_pattern: "*generator_100000.ckpt"
 gen_cfg:
   _target_: gnosis.models.DCGenerator
   nc: 3

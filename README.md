@@ -64,7 +64,7 @@ To log results to an S3 bucket (must have AWS credentials configured), use
 `logger=s3 logger.bucket_name=<BUCKET_NAME>`
 
 To load checkpoints from S3, use
-`ckpt_store=s3 s3_bucket=<BUCKET_NAME> teacher.ckpt_path=<TEACHER_REMOTE_PATH> density_model.weight_dir<DM_REMOTE_PATH>`
+`ckpt_store=s3 s3_bucket=<BUCKET_NAME> teacher.ckpt_path=<TEACHER_REMOTE_PATH> density_model.ckpt_path=<DM_REMOTE_PATH>`
 
 
 ## Additional functionality
