@@ -8,14 +8,28 @@ To use Hydra's multirun feature use the `-m` flag (e.g. to run multiple trials u
 ## Installation
 
 ```bash
+git clone https://github.com/samuelstanton/gnosis.git
+cd gnosis
+conda create --name gnosis-env python=3.8
+conda activate gnosis-env
 python -m pip install -r requirements.txt
 python -m pip install -e .
+```
+
+#### (Optional) symlink datasets
+
+If you already have the datasets downloaded, just create a symlink.
+If you skip this step the datasets will be downloaded automatically.
+
+```bash
+mkdir ./data
+ln -s <DATASET_PARENT_DIR> ./data/datasets
 ```
 
 
 ## Train teacher networks
 
-To eliminate unnecessary compute, we recommend you train your teacher and student models separately.
+For the sake of efficiency, we recommend you train your teacher and student models separately.
 
 #### Example: train 3 ResNet-20 image classifiers on CIFAR-100
 
@@ -29,7 +43,7 @@ trainer.distill_teacher=False dataloader.batch_size=256 trial_id=0,1,2`
 trainer.distill_teacher=False trial_id=0,1,2`
 
 
-## (Optional) Train a generative model for synthetic data augmentation
+## (Optional) train a generative model for synthetic data augmentation
 
 To perform synthetic data augmentation you'll first need to train a GAN checkpoint.
 The SN-GAN implementation and evaluation is copied from 
@@ -60,6 +74,9 @@ exp_name=student_resnet_synth-aug_results distill_loader.synth_ratio=0.2`
 
 
 ## Logging and Checkpointing
+
+By default, program output and checkpoints are stored locally in automatically generated subdirectories.
+
 To log results to an S3 bucket (must have AWS credentials configured), use
 `logger=s3 logger.bucket_name=<BUCKET_NAME>`
 
