@@ -2,7 +2,7 @@ _target_: gnosis.models.SNGAN
 _recursive_: False
 name: sngan
 ckpt_dir: test/${density_model.name}_${dataset.name}_${version}
-ckpt_pattern: "*generator_100.ckpt"
+ckpt_pattern: "*generator_100000.ckpt"
 gen_cfg:
   _target_: gnosis.models.sngan.Generator
   img_channels: 3
