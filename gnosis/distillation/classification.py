@@ -36,7 +36,7 @@ class ClassifierStudentLoss(object):
 def reduce_ensemble_logits(teacher_logits):
     assert teacher_logits.dim() == 3
     teacher_logits = F.log_softmax(teacher_logits, dim=-1)
-    n_teachers = len(teacher_logits)
+    n_teachers = teacher_logits.size(1)
     return torch.logsumexp(teacher_logits, dim=1) - math.log(n_teachers)
 
 
